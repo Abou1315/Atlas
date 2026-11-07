@@ -1,0 +1,1183 @@
+<!doctype html>
+<html lang="fr">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<meta name="apple-mobile-web-app-capable" content="yes">
+<meta name="mobile-web-app-capable" content="yes">
+<meta name="apple-mobile-web-app-title" content="Batteries">
+<meta name="theme-color" content="#eef1f4">
+<title>Contrôle Batteries</title>
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Barlow:wght@400;500;600;700&family=Barlow+Condensed:wght@600;700&family=IBM+Plex+Mono:wght@500;600&display=swap">
+<style>
+/* Layout : outil de terrain pour téléphone, lisible en plein soleil.
+   Chaque voiture est une carte : emplacement en gros (comme un panneau de parking), plaque, VIN avec les 8 derniers caractères en évidence, puis trois gros boutons. */
+:root {
+  color-scheme: light;
+  --bg: #eef1f4;
+  --surface: #ffffff;
+  --surface-2: #e3e8ed;
+  --fg: #0f1720;
+  --muted: #46525f;
+  --line: #bcc6d0;
+  --ink: #0f1720;
+  --on-ink: #ffffff;
+  --scrim: rgba(8, 12, 16, 0.55);
+  --c60: #f5a623; --on60: #201400; --t60: #fff0d0;
+  --c70: #2a78dd; --on70: #ffffff; --t70: #e0edff;
+  --cnf: #d1362b; --onnf: #ffffff; --tnf: #ffe2df;
+  --warn-bg: #fff0c2; --warn-fg: #5e3b00; --warn-line: #d89b00; --warn-mark: #ffd24d; --on-mark: #1a1100;
+  --plate-bg: #ffffff; --plate-fg: #101418; --plate-band: #1d4fb8;
+  --danger-text: #b3261e;
+  --font-body: 'Barlow', 'Helvetica Neue', Arial, sans-serif;
+  --font-display: 'Barlow Condensed', 'Arial Narrow', 'Roboto Condensed', sans-serif;
+  --font-mono: 'IBM Plex Mono', ui-monospace, Menlo, Consolas, monospace;
+}
+@media (prefers-color-scheme: dark) {
+  :root:not([data-theme="light"]) {
+    color-scheme: dark;
+    --bg: #0d1217; --surface: #161d24; --surface-2: #202932; --fg: #f3f6f9; --muted: #a8b3bf; --line: #35424f;
+    --ink: #f3f6f9; --on-ink: #0d1217; --scrim: rgba(0, 0, 0, 0.6);
+    --c60: #f4a93c; --on60: #1f1300; --t60: #33270f;
+    --c70: #5aa2f2; --on70: #06182e; --t70: #14283f;
+    --cnf: #f07067; --onnf: #2a0907; --tnf: #3a1816;
+    --warn-bg: #3a2d0b; --warn-fg: #ffd988; --warn-line: #a77a00; --warn-mark: #f2b705; --on-mark: #1a1100;
+    --plate-band: #3b6fd6; --danger-text: #ff9a92;
+  }
+}
+:root[data-theme="dark"] {
+  color-scheme: dark;
+  --bg: #0d1217; --surface: #161d24; --surface-2: #202932; --fg: #f3f6f9; --muted: #a8b3bf; --line: #35424f;
+  --ink: #f3f6f9; --on-ink: #0d1217; --scrim: rgba(0, 0, 0, 0.6);
+  --c60: #f4a93c; --on60: #1f1300; --t60: #33270f;
+  --c70: #5aa2f2; --on70: #06182e; --t70: #14283f;
+  --cnf: #f07067; --onnf: #2a0907; --tnf: #3a1816;
+  --warn-bg: #3a2d0b; --warn-fg: #ffd988; --warn-line: #a77a00; --warn-mark: #f2b705; --on-mark: #1a1100;
+  --plate-band: #3b6fd6; --danger-text: #ff9a92;
+}
+
+* { box-sizing: border-box; }
+html { -webkit-text-size-adjust: 100%; padding-top: env(safe-area-inset-top, 0px); padding-bottom: env(safe-area-inset-bottom, 0px); }
+body {
+  margin: 0;
+  background: var(--bg);
+  color: var(--fg);
+  font-family: var(--font-body);
+  font-size: 17px;
+  line-height: 1.35;
+}
+body::before { content: ""; position: fixed; inset: 0 0 auto; height: env(safe-area-inset-top, 0px); z-index: 10; background: var(--bg); }
+img { max-width: 100%; }
+[hidden] { display: none !important; }
+button, input { font: inherit; color: inherit; }
+button { cursor: pointer; -webkit-tap-highlight-color: transparent; }
+:focus-visible { outline: 3px solid var(--fg); outline-offset: 2px; }
+
+.in { max-width: 640px; margin: 0 auto; padding-left: max(16px, env(safe-area-inset-left, 0px)); padding-right: max(16px, env(safe-area-inset-right, 0px)); }
+
+/* En-tête */
+.top { position: sticky; top: env(safe-area-inset-top, 0px); z-index: 20; background: var(--bg); border-bottom: 1px solid var(--line); }
+.top .in { display: flex; align-items: center; justify-content: space-between; gap: 12px; padding-block: 12px; }
+.brand { margin: 0; font-family: var(--font-display); font-weight: 700; font-size: 22px; line-height: 1; letter-spacing: 0.02em; text-transform: uppercase; white-space: nowrap; min-width: 0; overflow: hidden; text-overflow: ellipsis; }
+.count { flex: none; font-weight: 600; font-size: 16px; color: var(--muted); font-variant-numeric: tabular-nums; white-space: nowrap; }
+.main .in { padding-block: 16px calc(100px + env(safe-area-inset-bottom, 0px)); }
+
+/* Boutons */
+.btn { display: flex; align-items: center; justify-content: center; gap: 10px; width: 100%; min-height: 54px; padding: 8px 14px; border-radius: 12px; border: 2px solid var(--ink); background: var(--ink); color: var(--on-ink); font-weight: 700; font-size: 18px; line-height: 1.15; text-align: center; }
+.btn--primary { min-height: 64px; font-size: 20px; }
+.btn--ghost { background: transparent; color: var(--fg); }
+.btn--danger { background: transparent; border-color: var(--danger-text); color: var(--danger-text); }
+.btn--danger-solid { background: var(--cnf); border-color: var(--cnf); color: var(--onnf); }
+.btn[disabled] { opacity: 0.45; cursor: default; }
+.stack { display: grid; gap: 10px; }
+.duo { display: grid; grid-template-columns: 1fr 1fr; gap: 10px; }
+
+/* Panneaux d'import */
+.panel { margin-top: 14px; padding: 16px; display: grid; gap: 12px; background: var(--surface); border: 2px solid var(--line); border-radius: 14px; }
+.panel p { margin: 0; }
+.panel .big { font-weight: 700; font-size: 19px; }
+.panel .warn-text { color: var(--danger-text); font-weight: 600; }
+.bar { height: 10px; border-radius: 5px; background: var(--surface-2); overflow: hidden; }
+.bar > i { display: block; height: 100%; background: var(--ink); width: 0; }
+@media (prefers-reduced-motion: no-preference) { .bar > i { transition: width 0.3s; } }
+.sum { display: flex; flex-wrap: wrap; gap: 8px; }
+.tag { padding: 5px 11px; border-radius: 999px; background: var(--surface-2); font-weight: 600; font-size: 15px; }
+.tag--warn { background: var(--warn-bg); color: var(--warn-fg); border: 1.5px solid var(--warn-line); }
+
+/* Recherche et filtres */
+.tools { display: grid; gap: 10px; margin-top: 14px; }
+.tools input { width: 100%; height: 54px; padding: 0 16px; border: 2px solid var(--line); border-radius: 12px; background: var(--surface); font-size: 17px; }
+.chips { display: flex; flex-wrap: wrap; gap: 8px; }
+.chip { min-height: 44px; padding: 0 16px; border-radius: 999px; border: 2px solid var(--line); background: var(--surface); font-weight: 600; font-size: 16px; }
+.chip[aria-pressed="true"] { background: var(--ink); border-color: var(--ink); color: var(--on-ink); }
+.chip--warn[aria-pressed="false"] { background: var(--warn-bg); border-color: var(--warn-line); color: var(--warn-fg); }
+
+.h2 { margin: 0 0 12px; font-family: var(--font-display); font-weight: 700; font-size: 28px; line-height: 1.1; letter-spacing: 0.03em; text-transform: uppercase; }
+.note { margin: 0; padding: 16px 2px; color: var(--muted); font-size: 18px; }
+
+/* Cartes voiture */
+.list { display: grid; gap: 14px; margin-top: 14px; }
+.car { display: grid; gap: 14px; padding: 14px; background: var(--surface); border: 2px solid var(--line); border-radius: 16px; }
+.car[data-st="60"] { background: var(--t60); border-color: var(--c60); }
+.car[data-st="70"] { background: var(--t70); border-color: var(--c70); }
+.car[data-st="nf"] { background: var(--tnf); border-color: var(--cnf); }
+.head { display: grid; grid-template-columns: auto minmax(0, 1fr) auto; gap: 12px; align-items: center; }
+.ids { display: grid; gap: 10px; justify-items: start; }
+.bay { min-width: 78px; padding: 10px 10px 8px; border-radius: 8px; background: var(--ink); color: var(--on-ink); font-family: var(--font-display); font-weight: 700; font-size: 28px; line-height: 1; letter-spacing: 0.02em; text-align: center; text-transform: uppercase; white-space: nowrap; }
+.bay--long { font-size: 20px; white-space: normal; overflow-wrap: anywhere; max-width: 120px; }
+.bay--none { background: transparent; color: var(--muted); border: 2px dashed var(--line); font-size: 30px; }
+.info { min-width: 0; }
+.name { font-weight: 700; font-size: 19px; line-height: 1.2; overflow-wrap: break-word; }
+.plate { display: inline-flex; align-items: stretch; border: 2px solid var(--plate-fg); border-radius: 6px; background: var(--plate-bg); color: var(--plate-fg); overflow: hidden; white-space: nowrap; }
+.plate::before { content: ""; width: 12px; background: var(--plate-band); }
+.plate span { padding: 4px 12px 3px; font-family: var(--font-mono); font-weight: 600; font-size: 22px; letter-spacing: 0.06em; }
+.noplate { display: inline-block; padding: 4px 10px; border: 2px dashed var(--line); border-radius: 6px; color: var(--muted); font-size: 16px; font-weight: 600; }
+.icon-btn { width: 46px; height: 46px; display: grid; place-items: center; border: 2px solid var(--line); border-radius: 12px; background: var(--surface); }
+
+.vin { font-family: var(--font-mono); font-weight: 500; font-size: 16px; color: var(--muted); overflow-wrap: anywhere; line-height: 1.4; }
+.vin__lbl { font-family: var(--font-body); font-weight: 700; font-size: 13px; letter-spacing: 0.08em; margin-right: 4px; }
+.vin b { font-weight: 600; font-size: 21px; color: var(--fg); letter-spacing: 0.02em; }
+.vin__miss { font-family: var(--font-body); color: var(--danger-text); font-weight: 700; }
+.uc { background: var(--warn-mark); color: var(--on-mark); border-radius: 3px; padding: 0 2px; }
+.vwarn { display: flex; flex-wrap: wrap; align-items: center; gap: 10px; padding: 10px 12px; border-radius: 12px; background: var(--warn-bg); color: var(--warn-fg); border: 2px solid var(--warn-line); font-weight: 600; font-size: 16px; }
+.vwarn span { flex: 1 1 180px; min-width: 0; }
+.vwarn button { min-height: 46px; padding: 0 16px; border-radius: 10px; border: 2px solid var(--warn-fg); background: transparent; color: var(--warn-fg); font-weight: 700; font-size: 16px; }
+.vflag { display: inline-block; padding: 3px 10px; border-radius: 999px; background: var(--warn-bg); color: var(--warn-fg); border: 1.5px solid var(--warn-line); font-weight: 700; font-size: 14px; }
+
+/* Les trois cases */
+.picks { display: grid; grid-template-columns: 1fr 1fr 1.5fr; gap: 10px; }
+.pick { min-height: 68px; padding: 0 4px; display: flex; align-items: center; justify-content: center; gap: 4px; border: 2px solid var(--line); border-radius: 14px; background: var(--surface); color: var(--fg); font-family: var(--font-display); font-weight: 700; font-size: 38px; line-height: 1; }
+.pick small { font-size: 17px; font-weight: 700; }
+.pick--nf { font-family: var(--font-body); font-size: 18px; font-weight: 700; white-space: nowrap; }
+.pick[aria-pressed="true"]::before { content: "\2713"; margin-right: 4px; font-family: var(--font-body); font-size: 0.55em; }
+.pick[aria-pressed="true"] { border-color: transparent; }
+.pick--60[aria-pressed="true"] { background: var(--c60); color: var(--on60); }
+.pick--70[aria-pressed="true"] { background: var(--c70); color: var(--on70); }
+.pick--nf[aria-pressed="true"] { background: var(--cnf); color: var(--onnf); }
+
+/* À changer */
+.pills { display: grid; grid-template-columns: 1fr 1fr; gap: 10px; margin-bottom: 14px; }
+.pill { display: flex; align-items: baseline; justify-content: center; gap: 8px; padding: 12px; border-radius: 14px; font-family: var(--font-display); font-weight: 700; font-size: 26px; line-height: 1; }
+.pill b { font-size: 46px; }
+.pill--60 { background: var(--c60); color: var(--on60); }
+.pill--70 { background: var(--c70); color: var(--on70); }
+.badge { display: flex; align-items: baseline; gap: 3px; padding: 6px 9px; border-radius: 12px; font-family: var(--font-display); font-weight: 700; font-size: 30px; white-space: nowrap; line-height: 1; }
+.badge small { font-size: 17px; font-weight: 700; }
+.badge--60 { background: var(--c60); color: var(--on60); }
+.badge--70 { background: var(--c70); color: var(--on70); }
+
+/* État vide */
+.empty { display: grid; gap: 16px; margin-top: 8px; }
+.empty p { margin: 0; color: var(--muted); font-size: 18px; }
+.steps { margin: 0; padding: 0; list-style: none; display: grid; gap: 10px; counter-reset: s; }
+.steps li { counter-increment: s; display: grid; grid-template-columns: 38px 1fr; gap: 12px; align-items: center; font-size: 18px; }
+.steps li::before { content: counter(s); display: grid; place-items: center; width: 38px; height: 38px; border-radius: 50%; background: var(--ink); color: var(--on-ink); font-family: var(--font-display); font-weight: 700; font-size: 22px; }
+.example { position: relative; margin-top: 8px; opacity: 0.9; pointer-events: none; }
+.example__tag { position: absolute; top: -12px; right: 14px; z-index: 1; padding: 3px 11px; border-radius: 999px; background: var(--ink); color: var(--on-ink); font-size: 12px; font-weight: 700; letter-spacing: 0.08em; text-transform: uppercase; }
+
+/* Texte final */
+.report { width: 100%; padding: 14px; border: 2px solid var(--line); border-radius: 12px; background: var(--surface); color: var(--fg); font-family: var(--font-mono); font-weight: 500; font-size: 16px; line-height: 1.8; white-space: pre; overflow-x: auto; resize: none; }
+.legend { margin: 0; color: var(--muted); font-size: 17px; }
+.legend b { color: var(--fg); font-family: var(--font-mono); }
+.block { display: grid; gap: 14px; }
+.sep { margin-top: 26px; padding-top: 20px; border-top: 2px solid var(--line); display: grid; gap: 12px; }
+
+/* Barre d'onglets */
+.nav { position: fixed; left: 0; right: 0; bottom: 0; z-index: 30; background: var(--surface); border-top: 2px solid var(--line); padding-bottom: env(safe-area-inset-bottom, 0px); }
+.nav .in { display: grid; grid-template-columns: repeat(4, minmax(0, 1fr)); }
+.tab { position: relative; min-height: 68px; padding: 10px 2px 8px; display: flex; flex-direction: column; align-items: center; gap: 4px; border: 0; border-top: 4px solid transparent; background: transparent; color: var(--muted); font-weight: 700; font-size: 13px; }
+.tab[aria-current="page"] { color: var(--fg); border-top-color: var(--fg); }
+.tab__n { position: absolute; top: 6px; left: calc(50% + 8px); min-width: 22px; height: 22px; padding: 0 6px; border-radius: 11px; background: var(--ink); color: var(--on-ink); font-size: 13px; line-height: 22px; text-align: center; }
+
+/* Fiche */
+.scrim { position: fixed; inset: 0; z-index: 40; background: var(--scrim); }
+.sheet { position: fixed; left: 0; right: 0; bottom: 0; z-index: 50; max-width: 640px; max-height: 92%; margin: 0 auto; overflow-y: auto; display: grid; gap: 14px; padding: 18px max(16px, env(safe-area-inset-right, 0px)) calc(18px + env(safe-area-inset-bottom, 0px)) max(16px, env(safe-area-inset-left, 0px)); background: var(--surface); border-radius: 18px 18px 0 0; }
+.field { display: grid; gap: 6px; min-width: 0; }
+.field label { font-weight: 700; font-size: 15px; }
+.field input { width: 100%; height: 54px; padding: 0 14px; border: 2px solid var(--line); border-radius: 12px; background: var(--bg); font-size: 18px; }
+.field .mono { font-family: var(--font-mono); letter-spacing: 0.04em; }
+.field small { color: var(--muted); font-size: 14px; }
+.two { display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 10px; }
+.form-error { margin: 0; color: var(--danger-text); font-weight: 700; }
+.form-error:empty { display: none; }
+.toast { position: fixed; left: 50%; bottom: calc(86px + env(safe-area-inset-bottom, 0px)); transform: translateX(-50%); z-index: 60; max-width: calc(100% - 32px); padding: 12px 20px; border-radius: 999px; background: var(--ink); color: var(--on-ink); font-weight: 700; text-align: center; }
+</style>
+</head>
+<body>
+<header class="top">
+  <div class="in">
+    <h1 class="brand">Contrôle batteries</h1>
+    <span class="count" id="count">0 voiture</span>
+  </div>
+</header>
+
+<main class="main">
+  <div class="in">
+    <section id="view-controle" aria-label="Contrôle">
+      <div class="stack">
+        <button type="button" class="btn btn--primary" id="btn-import">
+          <svg width="26" height="26" viewBox="0 0 24 24" aria-hidden="true"><path d="M4 8h3l1.6-2.5h6.8L17 8h3v11H4z" fill="none" stroke="currentColor" stroke-width="2" stroke-linejoin="round"/><circle cx="12" cy="13.5" r="3.5" fill="none" stroke="currentColor" stroke-width="2"/></svg>
+          Ajouter des captures
+        </button>
+        <button type="button" class="btn btn--ghost" data-action="add">Saisir à la main</button>
+      </div>
+      <input type="file" id="files" accept="image/*" multiple hidden>
+      <div id="import-area" aria-live="polite"></div>
+      <div class="tools" id="tools" hidden>
+        <input type="search" id="q" placeholder="Chercher plaque, VIN, emplacement" aria-label="Chercher une voiture" autocomplete="off">
+        <div class="chips" id="chips"></div>
+      </div>
+      <div class="list" id="list"></div>
+    </section>
+    <section id="view-change" aria-label="À changer" hidden></section>
+    <section id="view-nf" aria-label="Introuvables" hidden></section>
+    <section id="view-report" aria-label="Texte final" hidden></section>
+  </div>
+</main>
+
+<nav class="nav" aria-label="Sections">
+  <div class="in">
+    <button type="button" class="tab" data-action="tab" data-tab="controle" aria-current="page">
+      <svg width="26" height="26" viewBox="0 0 24 24" aria-hidden="true"><path d="M4 6h2v2H4zM9 6h11v2H9zM4 11h2v2H4zM9 11h11v2H9zM4 16h2v2H4zM9 16h11v2H9z" fill="currentColor"/></svg>
+      <span>Contrôle</span>
+    </button>
+    <button type="button" class="tab" data-action="tab" data-tab="change">
+      <svg width="26" height="26" viewBox="0 0 24 24" aria-hidden="true"><rect x="2.5" y="7.5" width="17" height="10" rx="1.5" fill="none" stroke="currentColor" stroke-width="2"/><rect x="20.5" y="10.5" width="2" height="4" fill="currentColor"/><path d="M8 12.5h6M11 9.5v6" stroke="currentColor" stroke-width="2" fill="none"/></svg>
+      <span>À changer</span>
+      <span class="tab__n" id="n-change" hidden></span>
+    </button>
+    <button type="button" class="tab" data-action="tab" data-tab="nf">
+      <svg width="26" height="26" viewBox="0 0 24 24" aria-hidden="true"><circle cx="10.5" cy="10.5" r="5.5" fill="none" stroke="currentColor" stroke-width="2"/><path d="M15 15l5.5 5.5" stroke="currentColor" stroke-width="2" stroke-linecap="round" fill="none"/></svg>
+      <span>Introuvables</span>
+      <span class="tab__n" id="n-nf" hidden></span>
+    </button>
+    <button type="button" class="tab" data-action="tab" data-tab="report">
+      <svg width="26" height="26" viewBox="0 0 24 24" aria-hidden="true"><rect x="5" y="3.5" width="14" height="17" rx="1.5" fill="none" stroke="currentColor" stroke-width="2"/><path d="M8.5 9h7M8.5 13h7M8.5 17h4" stroke="currentColor" stroke-width="2" fill="none"/></svg>
+      <span>Texte</span>
+    </button>
+  </div>
+</nav>
+
+<div id="sheet-root"></div>
+<div class="toast" id="toast" role="status" hidden></div>
+
+<script src="https://cdn.jsdelivr.net/npm/tesseract.js@5.1.1/dist/tesseract.min.js"></script>
+<script>
+(function () {
+  'use strict';
+
+  var KEY = 'controle-batteries-v1';
+  var $ = function (s, r) { return (r || document).querySelector(s); };
+  var esc = function (s) {
+    return String(s == null ? '' : s).replace(/[&<>"']/g, function (ch) {
+      return { '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#39;' }[ch];
+    });
+  };
+  var plural = function (n, one, many) { return n > 1 ? many : one; };
+  var clean = function (s) { return String(s == null ? '' : s).replace(/\s+/g, ' ').trim(); };
+  var uid = function () { return Math.random().toString(36).slice(2, 9) + Date.now().toString(36); };
+
+  var ICON_EDIT = '<svg width="24" height="24" viewBox="0 0 24 24" aria-hidden="true"><path d="M4 20h4l10.5-10.5-4-4L4 16v4z" fill="none" stroke="currentColor" stroke-width="2" stroke-linejoin="round"/></svg>';
+
+/* ---------- Lecture du texte d'une capture ---------- */
+  var BRANDS = ['ALFA ROMEO','AUDI','BMW','BYD','CITROEN','CITROËN','CUPRA','DACIA','DS','FIAT','FORD','HONDA','HYUNDAI','IVECO','JEEP','KIA','LANCIA','LAND ROVER','LEXUS','MAN','MAZDA','MERCEDES-BENZ','MERCEDES','MG','MINI','MITSUBISHI','NISSAN','OPEL','PEUGEOT','POLESTAR','PORSCHE','RENAULT','SEAT','SKODA','SMART','SUZUKI','TESLA','TOYOTA','VOLKSWAGEN','VOLVO','VW'].sort(function (a, b) { return b.length - a.length; });
+  var LETFIX = { '0': 'O', '1': 'I', '5': 'S', '8': 'B', '2': 'Z', '6': 'G' };
+  var DIGFIX = { 'O': '0', 'Q': '0', 'I': '1', 'L': '1', 'S': '5', 'B': '8', 'Z': '2', 'G': '6', 'D': '0' };
+  function fixL(s) { return s.replace(/[0-9]/g, function (c) { return LETFIX[c] || c; }); }
+  function fixD(s) { return s.replace(/[A-Z]/g, function (c) { return DIGFIX[c] || c; }); }
+  function toTitle(s) { return s.toLowerCase().replace(/(^|[\s\-])([a-zà-ÿ])/g, function (m, a, b) { return a + b.toUpperCase(); }); }
+  function lev(a, b) {
+    var m = a.length, n = b.length, i, j, prev = [], cur;
+    for (j = 0; j <= n; j++) prev[j] = j;
+    for (i = 1; i <= m; i++) {
+      cur = [i];
+      for (j = 1; j <= n; j++) cur[j] = Math.min(prev[j] + 1, cur[j - 1] + 1, prev[j - 1] + (a.charAt(i - 1) === b.charAt(j - 1) ? 0 : 1));
+      prev = cur;
+    }
+    return prev[n];
+  }
+  function median(a) { var s = a.slice().sort(function (x, y) { return x - y; }); return s[Math.floor(s.length / 2)]; }
+
+  var PLATE_STRICT = /\b([A-Z]{2})[\s\-–.]?(\d{3})[\s\-–.]?([A-Z]{2})\b/;
+  var PLATE_STRICT_G = /\b[A-Z]{2}[\s\-–.]?\d{3}[\s\-–.]?[A-Z]{2}\b/g;
+
+  function vinIn(t) {
+    var toks = String(t).toUpperCase().split(/[^A-Z0-9]+/).filter(Boolean), best = '', i, n;
+    for (i = 0; i < toks.length; i++) {
+      n = normVin(toks[i]);
+      if (n.length >= 16 && n.length <= 18 && (n.match(/\d/g) || []).length >= 4 && /[A-Z]/.test(n)) {
+        if (n.length === 17) return n;
+        if (!best) best = n;
+      }
+    }
+    if (best) return best;
+    var j = normVin(t);
+    return (j.length === 17 && (j.match(/\d/g) || []).length >= 4 && /[A-Z]/.test(j)) ? j : '';
+  }
+
+  function plateIn(t) {
+    var u = String(t).toUpperCase().replace(/[A-Z0-9]{14,}/g, ' ');
+    var m = u.match(PLATE_STRICT);
+    if (m) return m[1] + ' ' + m[2] + ' ' + m[3];
+    var re = /(?:^|[^A-Z0-9])([A-Z0-9]{2})[\s\-–.]([A-Z0-9]{3})[\s\-–.]([A-Z0-9]{2})(?![A-Z0-9])/g;
+    while ((m = re.exec(u))) {
+      var a = fixL(m[1]), b = fixD(m[2]), c = fixL(m[3]);
+      if (/^[A-Z]{2}$/.test(a) && /^\d{3}$/.test(b) && /^[A-Z]{2}$/.test(c)) return a + ' ' + b + ' ' + c;
+    }
+    return '';
+  }
+
+  function stripKnown(t) {
+    return String(t).replace(/[A-Za-z0-9]{14,}/g, ' ').replace(PLATE_STRICT_G, ' ');
+  }
+  function locIn(t) {
+    var u = stripKnown(String(t).toUpperCase());
+    var m = u.match(/\b([A-Z]{2,4})[\s\-–.]?(\d{1,3})\b/);
+    if (!m || /^(VIN|VINS|OBT|PARC)$/.test(m[1])) return '';
+    return m[1] + '-' + m[2];
+  }
+  function cleanModel(s) {
+    s = String(s || '').replace(/[^A-Za-z0-9À-ÿ\s\-.\/+]/g, ' ').replace(/\s+/g, ' ').trim();
+    if (s.length < 2 || !/[A-Za-z0-9]/.test(s)) return '';
+    return s.slice(0, 30);
+  }
+
+  function brandIn(t) {
+    var up = String(t).toUpperCase(), i, b, idx, before, after;
+    for (i = 0; i < BRANDS.length; i++) {
+      b = BRANDS[i];
+      idx = up.indexOf(b);
+      if (idx === -1) continue;
+      before = idx === 0 ? ' ' : up.charAt(idx - 1);
+      after = up.charAt(idx + b.length) || ' ';
+      if (/[A-Z0-9]/.test(before) || /[A-Z0-9]/.test(after)) continue;
+      return { brand: b, rest: clean(String(t).slice(idx + b.length)) };
+    }
+    var re = /[A-ZÉË]{4,}/g, m, lim;
+    while ((m = re.exec(up))) {
+      for (i = 0; i < BRANDS.length; i++) {
+        b = BRANDS[i];
+        if (b.length < 4 || b.indexOf(' ') !== -1) continue;
+        lim = b.length >= 7 ? 2 : 1;
+        if (Math.abs(b.length - m[0].length) <= lim && lev(m[0], b) <= lim) {
+          return { brand: b, rest: clean(String(t).slice(m.index + m[0].length)) };
+        }
+      }
+    }
+    return null;
+  }
+
+  function getLines(data) {
+    var src = (data && data.lines && data.lines.length) ? data.lines : [];
+    if (!src.length && data && data.blocks) {
+      data.blocks.forEach(function (b) {
+        (b.paragraphs || []).forEach(function (p) { (p.lines || []).forEach(function (l) { src.push(l); }); });
+      });
+    }
+    return src.map(function (l) {
+      var b = l.bbox || {};
+      var y0 = b.y0 || 0, y1 = b.y1 || 0;
+      return { t: clean(l.text), x0: b.x0 || 0, x1: b.x1 || 0, y0: y0, y1: y1, cy: (y0 + y1) / 2 };
+    }).filter(function (l) { return l.t; });
+  }
+
+  /* Une voiture = un VIN. Les autres infos (plaque, marque, modèle, emplacement) sont cherchées autour de lui. */
+  function parseCaptures(lines, W) {
+    var info = lines.map(function (l) { return { vin: vinIn(l.t), plate: plateIn(l.t) }; });
+    var anchors = [];
+    lines.forEach(function (l, i) { if (info[i].vin) anchors.push(i); });
+    anchors.sort(function (a, b) { return lines[a].cy - lines[b].cy; });
+    var sp = 0.2358 * W, k;
+    if (anchors.length > 1) {
+      var d = [];
+      for (k = 1; k < anchors.length; k++) d.push(lines[anchors[k]].cy - lines[anchors[k - 1]].cy);
+      sp = Math.min(0.4 * W, Math.max(0.12 * W, median(d)));
+    }
+    var used = {}, out = [];
+    var byY = function (a, b) { return lines[a].cy - lines[b].cy; };
+
+    function buildCard(idxs, vin, anchorLine) {
+      var plate = '', bl = null, brand = '', rest = '', modele = '', locs = [], q, i, l;
+      for (q = 0; q < idxs.length && !plate; q++) if (info[idxs[q]].plate) plate = info[idxs[q]].plate;
+      for (q = 0; q < idxs.length && !bl; q++) {
+        i = idxs[q];
+        if (info[i].vin) continue;
+        var bi = brandIn(lines[i].t);
+        if (bi) { bl = lines[i]; brand = bi.brand; rest = bi.rest; }
+      }
+      if (bl) {
+        modele = cleanModel(stripKnown(rest));
+        if (!modele) {
+          var bestD = 1e9;
+          idxs.forEach(function (j) {
+            var m = lines[j];
+            if (m === bl || info[j].vin || info[j].plate) return;
+            if (Math.abs(m.x0 - bl.x0) > 0.05 * W) return;
+            var dy = m.cy - bl.cy;
+            if (dy <= 0 || dy > 0.4 * sp || dy >= bestD) return;
+            var cm = cleanModel(stripKnown(m.t));
+            if (cm) { bestD = dy; modele = cm; }
+          });
+        }
+      }
+      for (q = 0; q < idxs.length; q++) {
+        i = idxs[q]; l = lines[i];
+        if (info[i].vin) continue;
+        if (bl && Math.abs(l.x0 - bl.x0) <= 0.05 * W) continue;
+        if (anchorLine && Math.abs(l.x0 - anchorLine.x0) <= 0.05 * W) continue;
+        var lo = locIn(l.t);
+        if (lo) locs.push(lo);
+      }
+      return {
+        vin: vin, plaque: plate,
+        marque: brand ? (brand.length > 3 ? toTitle(brand) : brand) : '',
+        modele: modele, emplacement: '', locs: locs,
+        vinBox: (vin && anchorLine) ? { x0: anchorLine.x0, y0: anchorLine.y0, x1: anchorLine.x1, y1: anchorLine.y1 } : null
+      };
+    }
+
+    anchors.forEach(function (ai) {
+      var a = lines[ai], idxs = [];
+      lines.forEach(function (l, i) {
+        if (i === ai || used[i] || info[i].vin) return;
+        if (l.cy > a.cy - 0.72 * sp && l.cy <= a.cy + 0.2 * sp) idxs.push(i);
+      });
+      idxs.forEach(function (i) { used[i] = 1; });
+      used[ai] = 1;
+      out.push(buildCard(idxs.sort(byY), info[ai].vin, a));
+    });
+
+    lines.forEach(function (l, i) {
+      if (used[i] || !info[i].plate) return;
+      var idxs = [];
+      lines.forEach(function (m, j) {
+        if (!used[j] && !info[j].vin && m.cy > l.cy - 0.3 * sp && m.cy <= l.cy + 0.7 * sp) idxs.push(j);
+      });
+      idxs.forEach(function (j) { used[j] = 1; });
+      out.push(buildCard(idxs.sort(byY), '', l));
+    });
+    /* L'emplacement est celui dont le préfixe (GRO, ...) revient le plus souvent sur la capture. */
+    var cnt = {}, dom = '', dn = 1, pf;
+    out.forEach(function (c) {
+      var seen = {};
+      c.locs.forEach(function (x) { pf = x.split('-')[0]; if (!seen[pf]) { seen[pf] = 1; cnt[pf] = (cnt[pf] || 0) + 1; } });
+    });
+    for (pf in cnt) if (cnt[pf] > dn) { dn = cnt[pf]; dom = pf; }
+    out.forEach(function (c) {
+      var pickLoc = '';
+      if (dom) c.locs.some(function (x) { if (x.split('-')[0] === dom) { pickLoc = x; return true; } return false; });
+      c.emplacement = pickLoc || c.locs[0] || '';
+      delete c.locs;
+    });
+    return out;
+  }
+
+
+  /* ---------- Données ---------- */
+  function fix(c) {
+    return {
+      id: c.id || uid(),
+      plaque: String(c.plaque || ''),
+      marque: String(c.marque || ''),
+      modele: String(c.modele || ''),
+      vin: String(c.vin || ''),
+      emp: String(c.emp || ''),
+      st: (c.st === '60' || c.st === '70' || c.st === 'nf') ? c.st : '',
+      chk: !!c.chk,
+      unc: Array.isArray(c.unc) ? c.unc.filter(function (n) { return typeof n === 'number'; }) : []
+    };
+  }
+  function load() {
+    try {
+      var raw = localStorage.getItem(KEY);
+      if (raw) {
+        var d = JSON.parse(raw);
+        if (d && Array.isArray(d.cars)) return d.cars.map(fix);
+      }
+    } catch (e) {}
+    return [];
+  }
+  function save() {
+    try { localStorage.setItem(KEY, JSON.stringify({ cars: cars })); } catch (e) {}
+  }
+
+  function normVin(v) {
+    return String(v || '').toUpperCase().replace(/[^A-Z0-9]/g, '').replace(/[OQ]/g, '0').replace(/I/g, '1');
+  }
+  function normPlate(p) {
+    var s = String(p || '').toUpperCase().replace(/[‐‑–—_.]/g, '-').replace(/\s+/g, ' ').trim();
+    if (!s || /^(N\/?A|AUCUNE?|NONE|NEANT|NÉANT|-+|\?+)$/.test(s)) return '';
+    var m = s.match(/^([A-Z]{2})[\s-]?(\d{3})[\s-]?([A-Z]{2})$/);
+    if (m) return m[1] + ' ' + m[2] + ' ' + m[3];
+    return s.replace(/-/g, ' ').replace(/\s+/g, ' ').trim();
+  }
+  var pk = function (p) { return String(p || '').replace(/\s/g, ''); };
+  function findDup(c) {
+    return cars.find(function (x) {
+      return (c.vin && x.vin && x.vin === c.vin) || (c.plaque && x.plaque && pk(x.plaque) === pk(c.plaque));
+    }) || null;
+  }
+
+  var collator = new Intl.Collator('fr', { numeric: true, sensitivity: 'base' });
+  function sortCars(list) {
+    return list.slice().sort(function (a, b) {
+      if (!a.emp !== !b.emp) return a.emp ? -1 : 1;
+      var r = collator.compare(a.emp, b.emp);
+      if (r) return r;
+      return collator.compare(a.plaque || a.vin, b.plaque || b.vin);
+    });
+  }
+  var byId = function (id) { return cars.find(function (c) { return c.id === id; }); };
+  var isChange = function (c) { return c.st === '60' || c.st === '70'; };
+
+  /* ---------- État ---------- */
+  var cars = load();
+  var tab = 'controle';
+  var query = '';
+  var filter = 'all';
+  var editingId = null;
+  var confirmDel = false;
+  var confirmClear = false;
+  var imp = null;
+  var toastT = null;
+
+  /* ---------- Composants ---------- */
+  function bay(c) {
+    if (!c.emp) return '<div class="bay bay--none">—</div>';
+    return '<div class="bay' + (c.emp.length > 8 ? ' bay--long' : '') + '">' + esc(c.emp) + '</div>';
+  }
+  function plateHtml(c) {
+    return c.plaque ? '<span class="plate"><span>' + esc(c.plaque) + '</span></span>' : '<span class="noplate">Sans plaque</span>';
+  }
+  function vinHtml(c) {
+    if (!c.vin) return '<div class="vin"><span class="vin__miss">VIN manquant</span></div>';
+    var v = c.vin, cut = Math.max(0, v.length - 8), out = '', u = {}, i, ch;
+    (c.unc || []).forEach(function (k) { u[k] = 1; });
+    for (i = 0; i < v.length; i++) {
+      ch = esc(v.charAt(i));
+      if (u[i]) ch = '<span class="uc">' + ch + '</span>';
+      if (i === cut) out += '<b>';
+      out += ch;
+    }
+    out += '</b>';
+    return '<div class="vin"><span class="vin__lbl">VIN</span>' + out + '</div>';
+  }
+  function vinWarn(c) {
+    if (!c.chk || !c.vin) return '';
+    var msg = (c.unc && c.unc.length) ? 'VIN pas sûr : vérifie les caractères en jaune.' : 'VIN à vérifier (' + c.vin.length + ' caractères au lieu de 17).';
+    return '<div class="vwarn"><span>' + msg + '</span><button type="button" data-action="vin-ok">C’est bon</button></div>';
+  }
+  function infoBlock(c) {
+    var name = [c.marque, c.modele].filter(Boolean).join(' ') || 'Voiture';
+    return '<div class="info"><div class="name">' + esc(name) + '</div></div>';
+  }
+  function idsBlock(c) { return '<div class="ids">' + plateHtml(c) + vinHtml(c) + '</div>'; }
+  function pick(c, st) {
+    var on = c.st === st;
+    var label = st === 'nf' ? 'Pas trouvé' : '<span>' + st + '</span><small>Ah</small>';
+    var aria = st === 'nf' ? 'Pas trouvé' : 'Batterie ' + st + ' Ah';
+    return '<button type="button" class="pick pick--' + st + '" data-action="set" data-st="' + st + '" aria-pressed="' + on + '" aria-label="' + aria + '">' + label + '</button>';
+  }
+  function carCard(c) {
+    return '<article class="car" data-id="' + esc(c.id) + '" data-st="' + esc(c.st) + '">' +
+      '<div class="head">' + bay(c) + infoBlock(c) +
+      '<button type="button" class="icon-btn" data-action="edit" aria-label="Modifier cette voiture">' + ICON_EDIT + '</button></div>' +
+      idsBlock(c) + vinWarn(c) +
+      '<div class="picks" role="group" aria-label="Résultat du contrôle">' + pick(c, '60') + pick(c, '70') + pick(c, 'nf') + '</div></article>';
+  }
+  function miniCard(c, right) {
+    return '<article class="car" data-id="' + esc(c.id) + '"><div class="head">' + bay(c) + infoBlock(c) + right + '</div>' +
+      idsBlock(c) + (c.chk && c.vin ? '<span class="vflag">VIN à vérifier</span>' : '') + '</article>';
+  }
+  function exampleCard() {
+    var ex = { emp: 'GRO-5', plaque: 'AB 123 CD', marque: 'Peugeot', modele: '208', vin: 'VR3UPHNEKP5172557', st: '', chk: false, unc: [] };
+    return '<div class="example" aria-hidden="true"><span class="example__tag">Exemple</span><article class="car">' +
+      '<div class="head">' + bay(ex) + infoBlock(ex) + '<span></span></div>' + idsBlock(ex) +
+      '<div class="picks"><div class="pick pick--60"><span>60</span><small>Ah</small></div><div class="pick pick--70"><span>70</span><small>Ah</small></div><div class="pick pick--nf">Pas trouvé</div></div>' +
+      '</article></div>';
+  }
+
+  /* ---------- Rendu ---------- */
+  function renderCounts() {
+    var n = cars.length;
+    $('#count').textContent = n + ' ' + plural(n, 'voiture', 'voitures');
+    var ch = cars.filter(isChange).length;
+    var nf = cars.filter(function (c) { return c.st === 'nf'; }).length;
+    var a = $('#n-change'), b = $('#n-nf');
+    a.hidden = !ch; a.textContent = ch;
+    b.hidden = !nf; b.textContent = nf;
+  }
+
+  function norm(s) { return String(s || '').toLowerCase().replace(/[\s\-]/g, ''); }
+
+  function renderList() {
+    var el = $('#list');
+    var nchk = cars.filter(function (c) { return c.chk && c.vin; }).length;
+    if (!nchk && filter === 'chk') filter = 'all';
+    $('#tools').hidden = !cars.length;
+    var chips = $('#chips');
+    chips.hidden = !nchk;
+    if (nchk) {
+      chips.innerHTML = '<button type="button" class="chip" data-action="filter" data-f="all" aria-pressed="' + (filter === 'all') + '">Toutes (' + cars.length + ')</button>' +
+        '<button type="button" class="chip chip--warn" data-action="filter" data-f="chk" aria-pressed="' + (filter === 'chk') + '">VIN à vérifier (' + nchk + ')</button>';
+    }
+    if (!cars.length) {
+      el.innerHTML = '<div class="empty"><h2 class="h2" style="margin:0">Aucune voiture pour l’instant</h2>' +
+        '<ol class="steps"><li>Ajoute les captures de ton appli de travail.</li><li>Coche 60, 70 ou Pas trouvé sur chaque voiture.</li><li>Copie le texte final dans l’onglet Texte.</li></ol>' +
+        '<p>Voici à quoi ressemblera chaque voiture.</p>' + exampleCard() + '</div>';
+      return;
+    }
+    var q = norm(query);
+    var items = sortCars(cars);
+    if (filter === 'chk') items = items.filter(function (c) { return c.chk && c.vin; });
+    if (q) items = items.filter(function (c) { return norm([c.emp, c.plaque, c.vin, c.marque, c.modele].join(' ')).indexOf(q) !== -1; });
+    if (!items.length) {
+      el.innerHTML = '<p class="note">Aucune voiture ne correspond' + (query ? ' à « ' + esc(query) + ' »' : '') + '.</p>';
+      return;
+    }
+    el.innerHTML = items.map(carCard).join('');
+  }
+
+  function renderChange() {
+    var list = sortCars(cars.filter(isChange));
+    var el = $('#view-change');
+    if (!list.length) {
+      el.innerHTML = '<h2 class="h2">À changer</h2><p class="note">Aucune batterie à changer pour l’instant. Coche 60 ou 70 sur une voiture qui ne démarre pas.</p>';
+      return;
+    }
+    var n60 = list.filter(function (c) { return c.st === '60'; }).length;
+    var n70 = list.length - n60;
+    var pills = '';
+    if (n60) pills += '<div class="pill pill--60"><b>' + n60 + '</b> × 60 Ah</div>';
+    if (n70) pills += '<div class="pill pill--70"><b>' + n70 + '</b> × 70 Ah</div>';
+    el.innerHTML = '<h2 class="h2">À changer (' + list.length + ')</h2><div class="pills">' + pills + '</div><div class="list" style="margin-top:0">' +
+      list.map(function (c) { return miniCard(c, '<div class="badge badge--' + c.st + '"><span>' + c.st + '</span><small>Ah</small></div>'); }).join('') + '</div>';
+  }
+
+  function renderNF() {
+    var list = sortCars(cars.filter(function (c) { return c.st === 'nf'; }));
+    var el = $('#view-nf');
+    if (!list.length) {
+      el.innerHTML = '<h2 class="h2">Introuvables</h2><p class="note">Aucune voiture marquée « Pas trouvé ».</p>';
+      return;
+    }
+    el.innerHTML = '<h2 class="h2">Introuvables (' + list.length + ')</h2><div class="list" style="margin-top:0">' +
+      list.map(function (c) {
+        return '<article class="car" data-id="' + esc(c.id) + '"><div class="head">' + bay(c) + infoBlock(c) + '<span></span></div>' + idsBlock(c) +
+          '<button type="button" class="btn btn--ghost" data-action="found">Retrouvée</button></article>';
+      }).join('') + '</div>';
+  }
+
+  function reportLine(c) {
+    var v8 = c.vin ? c.vin.slice(-8) : '????????';
+    return v8 + ' / ' + (c.plaque || c.vin || '?') + ' / ' + (isChange(c) ? 'TC' : 'T');
+  }
+  function renderReport() {
+    var el = $('#view-report');
+    var inc = sortCars(cars.filter(function (c) { return c.st !== 'nf'; }));
+    var nf = cars.length - inc.length;
+    var tc = inc.filter(isChange).length;
+    var t = inc.length - tc;
+    var html = '<div class="block"><h2 class="h2" style="margin:0">Texte à envoyer</h2>';
+    if (!inc.length) {
+      html += '<p class="note" style="padding:0">Rien à envoyer pour l’instant. Ajoute des voitures dans l’onglet Contrôle.</p>';
+    } else {
+      var lines = inc.map(reportLine);
+      html += '<textarea class="report" id="report" readonly wrap="off" rows="' + Math.max(3, lines.length + 1) + '" aria-label="Texte final">' + esc(lines.join('\n')) + '</textarea>' +
+        '<button type="button" class="btn btn--primary" data-action="copy">Copier le texte</button>' +
+        '<p class="legend"><b>T</b> = a démarré (' + t + ') · <b>TC</b> = batterie changée (' + tc + ')</p>';
+      var bad = inc.filter(function (c) { return (c.chk && c.vin) || !c.vin; });
+      if (bad.length) {
+        html += '<div class="vwarn"><span>' + bad.length + ' ' + plural(bad.length, 'VIN à vérifier', 'VIN à vérifier') + ' dans ce texte : ' +
+          esc(bad.map(function (c) { return c.emp || c.plaque || c.vin || '?'; }).join(', ')) + '.</span><button type="button" data-action="show-chk">Voir</button></div>';
+      }
+    }
+    if (nf) html += '<p class="legend">' + nf + ' ' + plural(nf, 'voiture introuvable n’est', 'voitures introuvables ne sont') + ' pas dans ce texte.</p>';
+    html += '</div>';
+    if (cars.length) {
+      html += '<div class="sep"><h2 class="h2" style="margin:0">Nouvelle journée</h2>' +
+        '<p class="legend">Efface toute la liste avant d’importer les voitures du jour suivant.</p>';
+      if (!confirmClear) html += '<button type="button" class="btn btn--danger" data-action="clear">Tout effacer</button>';
+      else html += '<div class="duo"><button type="button" class="btn btn--ghost" data-action="clear-cancel">Annuler</button>' +
+        '<button type="button" class="btn btn--danger-solid" data-action="clear-ok">Effacer ' + cars.length + ' ' + plural(cars.length, 'voiture', 'voitures') + '</button></div>';
+      html += '</div>';
+    }
+    el.innerHTML = html;
+  }
+
+  function renderImport() {
+    var el = $('#import-area');
+    var running = imp && imp.state === 'run';
+    $('#btn-import').disabled = !!running;
+    if (!imp) { el.innerHTML = ''; return; }
+    if (running) {
+      var pct = Math.round((imp.done / imp.total) * 100);
+      el.innerHTML = '<div class="panel"><p class="big">Lecture des captures : ' + imp.done + ' / ' + imp.total +
+        (imp.found ? ' · ' + imp.found + ' ' + plural(imp.found, 'voiture trouvée', 'voitures trouvées') : '') + '</p>' +
+        '<div class="bar" role="progressbar" aria-valuemin="0" aria-valuemax="100" aria-valuenow="' + pct + '"><i style="width:' + pct + '%"></i></div>' +
+        (imp.phase ? '<p>' + esc(imp.phase) + '</p>' : '') +
+        (imp.done === 0 ? '<p>Au premier lancement, le lecteur de texte se télécharge (quelques Mo). Cela peut prendre une minute.</p>' : '') +
+        '<button type="button" class="btn btn--ghost" data-action="stop">Arrêter</button></div>';
+      return;
+    }
+    var unread = imp.total - imp.done;
+    var h = '<div class="panel"><p class="big">' + imp.added + ' ' + plural(imp.added, 'voiture ajoutée', 'voitures ajoutées') + '</p><div class="sum">';
+    if (imp.dup) h += '<span class="tag">' + imp.dup + ' déjà dans la liste</span>';
+    if (imp.nChk) h += '<span class="tag tag--warn">' + imp.nChk + ' VIN à vérifier</span>';
+    if (imp.noVin) h += '<span class="tag tag--warn">' + imp.noVin + ' sans VIN</span>';
+    if (imp.noEmp) h += '<span class="tag tag--warn">' + imp.noEmp + ' sans emplacement</span>';
+    h += '</div>';
+    if (imp.failed.length) h += '<p class="warn-text">Aucune voiture lue sur la capture n° ' + esc(imp.failed.join(', ')) + '. Renvoie-la pour réessayer.</p>';
+    if (imp.fatal) h += '<p class="warn-text">' + esc(imp.fatal) + '</p>';
+    if (unread > 0 && !imp.fatal) h += '<p class="warn-text">' + unread + ' ' + plural(unread, 'capture non lue', 'captures non lues') + ' (arrêté).</p>';
+    else if (unread > 0) h += '<p class="warn-text">' + unread + ' ' + plural(unread, 'capture pas lue', 'captures pas lues') + '.</p>';
+    if (imp.nChk) h += '<button type="button" class="btn" data-action="show-chk">Voir les VIN à vérifier</button>';
+    h += '<button type="button" class="btn btn--ghost" data-action="dismiss-import">Fermer</button></div>';
+    el.innerHTML = h;
+  }
+
+  function renderView() {
+    if (tab === 'controle') renderList();
+    else if (tab === 'change') renderChange();
+    else if (tab === 'nf') renderNF();
+    else renderReport();
+  }
+  function renderAll() { renderCounts(); renderView(); }
+
+  function switchTab(name) {
+    tab = name;
+    if (name !== 'report') confirmClear = false;
+    ['controle', 'change', 'nf', 'report'].forEach(function (t) { $('#view-' + t).hidden = t !== name; });
+    document.querySelectorAll('.tab').forEach(function (b) {
+      if (b.dataset.tab === name) b.setAttribute('aria-current', 'page'); else b.removeAttribute('aria-current');
+    });
+    renderView();
+    window.scrollTo(0, 0);
+  }
+
+  function toast(msg) {
+    var el = $('#toast');
+    el.textContent = msg;
+    el.hidden = false;
+    clearTimeout(toastT);
+    toastT = setTimeout(function () { el.hidden = true; }, 2200);
+  }
+
+  /* ---------- Fiche d'une voiture ---------- */
+  function openSheet(id) {
+    editingId = id || null;
+    confirmDel = false;
+    var c = id ? byId(id) : { emp: '', plaque: '', marque: '', modele: '', vin: '' };
+    if (id && !c) return;
+    $('#sheet-root').innerHTML =
+      '<div class="scrim" data-action="sheet-close"></div>' +
+      '<form class="sheet" id="car-form" role="dialog" aria-modal="true" aria-labelledby="sheet-title" novalidate>' +
+      '<h2 class="h2" id="sheet-title" style="margin:0">' + (id ? 'Modifier la voiture' : 'Ajouter une voiture') + '</h2>' +
+      '<div class="field"><label for="f-emp">Emplacement dans le parc</label><input id="f-emp" type="text" autocomplete="off" autocapitalize="characters" value="' + esc(c.emp) + '"></div>' +
+      '<div class="field"><label for="f-plaque">Plaque</label><input id="f-plaque" class="mono" type="text" autocomplete="off" autocapitalize="characters" spellcheck="false" value="' + esc(c.plaque) + '"><small>Laisse vide s’il n’y a pas de plaque : le VIN complet sera utilisé.</small></div>' +
+      '<div class="two"><div class="field"><label for="f-marque">Marque</label><input id="f-marque" type="text" autocomplete="off" value="' + esc(c.marque) + '"></div>' +
+      '<div class="field"><label for="f-modele">Modèle</label><input id="f-modele" type="text" autocomplete="off" value="' + esc(c.modele) + '"></div></div>' +
+      '<div class="field"><label for="f-vin">VIN</label><input id="f-vin" class="mono" type="text" autocomplete="off" autocapitalize="characters" spellcheck="false" value="' + esc(c.vin) + '"><small id="vin-count">' + c.vin.length + ' / 17 caractères. Les 8 derniers vont dans le texte.</small></div>' +
+      '<p class="form-error" id="form-error" role="alert"></p>' +
+      '<div class="duo"><button type="button" class="btn btn--ghost" data-action="sheet-close">Annuler</button><button type="submit" class="btn">Enregistrer</button></div>' +
+      (id ? '<button type="button" class="btn btn--danger" id="btn-del" data-action="del">Supprimer cette voiture</button>' : '') +
+      '</form>';
+    if (!id) setTimeout(function () { var f = $('#f-emp'); if (f) f.focus(); }, 30);
+  }
+  function closeSheet() { $('#sheet-root').innerHTML = ''; editingId = null; confirmDel = false; }
+
+  /* ---------- Ajout des voitures lues ---------- */
+  function addExtracted(arr) {
+    var added = 0, dup = 0, newCars = [];
+    (Array.isArray(arr) ? arr : []).forEach(function (r) {
+      if (!r || typeof r !== 'object') return;
+      var c = fix({
+        plaque: normPlate(r.plaque),
+        marque: clean(r.marque),
+        modele: clean(r.modele),
+        vin: normVin(r.vin),
+        emp: clean(r.emplacement),
+        st: '',
+        chk: r.chk,
+        unc: r.unc
+      });
+      if (!c.vin && !c.plaque && !c.emp) return;
+      var ex = findDup(c);
+      if (ex) {
+        if (c.vin && (!ex.vin || (ex.chk && !c.chk))) { ex.vin = c.vin; ex.chk = c.chk; ex.unc = c.unc; }
+        if (!ex.plaque && c.plaque) ex.plaque = c.plaque;
+        if (!ex.marque && c.marque) ex.marque = c.marque;
+        if (!ex.modele && c.modele) ex.modele = c.modele;
+        if (!ex.emp && c.emp) ex.emp = c.emp;
+        dup++;
+        return;
+      }
+      cars.push(c);
+      newCars.push(c);
+      added++;
+    });
+    return { added: added, dup: dup, newCars: newCars };
+  }
+
+  /* ---------- Lecture des captures, sur le téléphone ---------- */
+  var VIN_CHARS = '0123456789ABCDEFGHJKLMNPRSTUVWXYZ';
+  var YEAR = 'ABCDEFGHJKLMNPRSTVWXY123456789';
+  var VARS = [{ scale: 3, bin: 0 }, { scale: 4, bin: 1 }, { scale: 5, bin: 0 }, { scale: 3.5, bin: 0.88 }];
+  var worker = null, wmode = 'page';
+
+  async function getWorker() {
+    if (worker) return worker;
+    if (!window.Tesseract) throw new Error('lib');
+    var w = await Tesseract.createWorker('fra', 1, {
+      logger: function (m) {
+        if (imp && imp.state === 'run' && imp.done === 0 && m && m.status) {
+          var pct = typeof m.progress === 'number' ? ' ' + Math.round(m.progress * 100) + ' %' : '';
+          imp.phase = (/load/i.test(m.status) ? 'Téléchargement du lecteur…' : 'Préparation du lecteur…') + pct;
+          renderImport();
+        }
+      }
+    });
+    await w.setParameters({ tessedit_pageseg_mode: '11', user_defined_dpi: '300' });
+    worker = w;
+    wmode = 'page';
+    return w;
+  }
+  async function setMode(w, mode) {
+    if (wmode === mode) return;
+    if (mode === 'vin') await w.setParameters({ tessedit_pageseg_mode: '7', tessedit_char_whitelist: VIN_CHARS });
+    else await w.setParameters({ tessedit_pageseg_mode: '11', tessedit_char_whitelist: '' });
+    wmode = mode;
+  }
+
+  async function prep(file) {
+    var bmp = await createImageBitmap(file);
+    var scale = Math.min(3, Math.max(0.5, 1500 / bmp.width));
+    var w = Math.round(bmp.width * scale), h = Math.round(bmp.height * scale);
+    var cv = document.createElement('canvas');
+    cv.width = w; cv.height = h;
+    var ctx = cv.getContext('2d', { willReadFrequently: true });
+    ctx.drawImage(bmp, 0, 0, w, h);
+    if (bmp.close) bmp.close();
+    var im = ctx.getImageData(0, 0, w, h), d = im.data, sum = 0, i, g;
+    for (i = 0; i < d.length; i += 4) {
+      g = 0.299 * d[i] + 0.587 * d[i + 1] + 0.114 * d[i + 2];
+      d[i] = d[i + 1] = d[i + 2] = g;
+      sum += g;
+    }
+    if (sum / (d.length / 4) < 110) {
+      for (i = 0; i < d.length; i += 4) { d[i] = d[i + 1] = d[i + 2] = 255 - d[i]; }
+    }
+    ctx.putImageData(im, 0, 0);
+    return { cv: cv, W: w };
+  }
+
+  function otsu(hist, total) {
+    var sum = 0, i, sB = 0, wB = 0, best = 0, thr = 128, wF, mB, mF, v;
+    for (i = 0; i < 256; i++) sum += i * hist[i];
+    for (i = 0; i < 256; i++) {
+      wB += hist[i];
+      if (!wB) continue;
+      wF = total - wB;
+      if (!wF) break;
+      sB += i * hist[i];
+      mB = sB / wB; mF = (sum - sB) / wF;
+      v = wB * wF * (mB - mF) * (mB - mF);
+      if (v > best) { best = v; thr = i; }
+    }
+    return thr;
+  }
+
+  /* Découpe la ligne du VIN, l'agrandit et augmente le contraste (variante v). */
+  function makeCrop(cv, box, v) {
+    var padX = 14, padY = 8, b = 24;
+    var sx = Math.max(0, Math.floor(box.x0 - padX)), sy = Math.max(0, Math.floor(box.y0 - padY));
+    var sw = Math.min(cv.width - sx, Math.ceil(box.x1 - box.x0 + 2 * padX));
+    var sh = Math.min(cv.height - sy, Math.ceil(box.y1 - box.y0 + 2 * padY));
+    if (sw < 20 || sh < 8) return null;
+    var ow = Math.round(sw * v.scale), oh = Math.round(sh * v.scale);
+    var out = document.createElement('canvas');
+    out.width = ow + 2 * b; out.height = oh + 2 * b;
+    var ctx = out.getContext('2d', { willReadFrequently: true });
+    ctx.fillStyle = '#fff';
+    ctx.fillRect(0, 0, out.width, out.height);
+    ctx.imageSmoothingEnabled = true;
+    ctx.imageSmoothingQuality = 'high';
+    ctx.drawImage(cv, sx, sy, sw, sh, b, b, ow, oh);
+    var im = ctx.getImageData(0, 0, out.width, out.height), d = im.data, i, g, lo = 255, hi = 0, hist = [];
+    for (i = 0; i < 256; i++) hist[i] = 0;
+    for (i = 0; i < d.length; i += 4) { g = d[i]; hist[g]++; if (g < lo) lo = g; if (g > hi) hi = g; }
+    if (hi - lo >= 20) {
+      var k = 255 / (hi - lo), h2 = [];
+      for (i = 0; i < 256; i++) h2[i] = 0;
+      for (i = 0; i < d.length; i += 4) { g = Math.round((d[i] - lo) * k); d[i] = d[i + 1] = d[i + 2] = g; h2[g]++; }
+      if (v.bin) {
+        var thr = otsu(h2, d.length / 4) * v.bin;
+        for (i = 0; i < d.length; i += 4) { g = d[i] > thr ? 255 : 0; d[i] = d[i + 1] = d[i + 2] = g; }
+      }
+      ctx.putImageData(im, 0, 0);
+    }
+    return out;
+  }
+
+  function vinFromText(t) {
+    var parts = String(t || '').split(/\r?\n/), best = '', i, n;
+    for (i = 0; i < parts.length; i++) {
+      n = normVin(parts[i]);
+      if (n.length >= 15 && n.length <= 19 && (!best || Math.abs(n.length - 17) < Math.abs(best.length - 17))) best = n;
+    }
+    return best || normVin(t);
+  }
+
+  function hint(i, ch, fr) {
+    var s = 0;
+    if (i === 9) s += YEAR.indexOf(ch) !== -1 ? 1 : -1;
+    if (fr && i >= 11 && /\d/.test(ch)) s += 1;
+    return s;
+  }
+  /* Vote caractère par caractère entre plusieurs lectures. Un caractère est sûr si au moins 75 % des lectures sont d'accord. */
+  function vinVote(reads) {
+    /* Une lecture de 18 caractères (un en trop) est corrigée en retirant le caractère qui la rapproche le plus des lectures de 17. */
+    var refs = reads.filter(function (r) { return r.length === 17; });
+    reads = reads.map(function (r) {
+      if (r.length !== 18 || !refs.length) return r;
+      var best = '', bd = 1e9, i, j, k, cand, d;
+      for (i = 0; i < 18; i++) {
+        cand = r.slice(0, i) + r.slice(i + 1);
+        d = 0;
+        for (j = 0; j < refs.length; j++) for (k = 0; k < 17; k++) if (cand.charAt(k) !== refs[j].charAt(k)) d++;
+        if (d < bd) { bd = d; best = cand; }
+      }
+      return bd <= 3 * refs.length ? best : r;
+    });
+    var pool = reads.filter(function (r) { return r.length === 17; });
+    if (!pool.length) return { vin: reads[0] || '', unc: [], chk: true };
+    var fr = /^V[FR]/.test(pool[0]);
+    var vin = '', unc = [], i, j, tally, ch, cand, top, topN, score, best;
+    for (i = 0; i < 17; i++) {
+      tally = {};
+      for (j = 0; j < pool.length; j++) { ch = pool[j].charAt(i); tally[ch] = (tally[ch] || 0) + 1; }
+      top = ''; topN = 0; best = -99;
+      for (cand in tally) {
+        score = tally[cand] * 10 + hint(i, cand, fr);
+        if (score > best) { best = score; top = cand; topN = tally[cand]; }
+      }
+      vin += top;
+      if (topN / pool.length < 0.75) unc.push(i);
+    }
+    /* Stellantis (VF3, VR3, VF7, VR7) : les 6 derniers caractères sont des chiffres. Une lettre est suspecte. */
+    if (/^V[FR][37]/.test(vin)) {
+      for (i = 11; i < 17; i++) if (/[A-Z]/.test(vin.charAt(i)) && unc.indexOf(i) === -1) unc.push(i);
+    }
+    unc.sort(function (a, b) { return a - b; });
+    return { vin: vin, unc: unc, chk: unc.length > 0 || pool.length < 3 };
+  }
+
+  async function verifyVins(w, cv, list, ctl) {
+    var todo = list.filter(function (c) { return c.vin && c.vinBox; });
+    if (!todo.length) return;
+    await setMode(w, 'vin');
+    try {
+      for (var n = 0; n < todo.length; n++) {
+        var car = todo[n], reads = [car.vin], v, crop, rr, t;
+        for (v = 0; v < VARS.length; v++) {
+          if (ctl.signal.aborted) break;
+          if (v === 2 && reads.length >= 3 && reads.every(function (r) { return r === reads[0]; })) break;
+          crop = makeCrop(cv, car.vinBox, VARS[v]);
+          if (!crop) continue;
+          rr = await w.recognize(crop);
+          t = vinFromText(rr && rr.data && rr.data.text);
+          if (t) reads.push(t);
+        }
+        var res = vinVote(reads);
+        car.vin = res.vin; car.unc = res.unc; car.chk = res.chk;
+      }
+    } finally {
+      await setMode(w, 'page');
+    }
+  }
+
+  async function runImport(files) {
+    if (!files.length) return;
+    var ctl = new AbortController();
+    imp = { state: 'run', total: files.length, done: 0, found: 0, added: 0, dup: 0, failed: [], newCars: [], nChk: 0, noVin: 0, noEmp: 0, fatal: '', ctl: ctl, phase: 'Préparation du lecteur…' };
+    renderImport();
+    var w;
+    try { w = await getWorker(); }
+    catch (e) {
+      imp.fatal = 'Impossible de charger le lecteur de texte. Vérifie ta connexion internet (nécessaire au premier lancement), puis réessaie.';
+      imp.state = 'done';
+      renderImport();
+      return;
+    }
+    imp.phase = '';
+    for (var i = 0; i < files.length; i++) {
+      if (ctl.signal.aborted) break;
+      try {
+        imp.phase = 'Capture ' + (i + 1) + ' : lecture…';
+        renderImport();
+        var p = await prep(files[i]);
+        var res = await w.recognize(p.cv);
+        var list = parseCaptures(getLines(res.data), p.W);
+        if (!list.length) {
+          imp.failed.push(i + 1);
+        } else {
+          imp.found += list.length;
+          imp.phase = 'Capture ' + (i + 1) + ' : vérification des VIN…';
+          renderImport();
+          await verifyVins(w, p.cv, list, ctl);
+          var r = addExtracted(list);
+          imp.added += r.added;
+          imp.dup += r.dup;
+          imp.newCars = imp.newCars.concat(r.newCars);
+          save();
+          renderCounts();
+          if (tab === 'controle') renderList();
+        }
+      } catch (e) {
+        imp.failed.push(i + 1);
+      }
+      imp.done = i + 1;
+      renderImport();
+    }
+    imp.phase = '';
+    imp.nChk = imp.newCars.filter(function (c) { return c.chk && c.vin; }).length;
+    imp.noVin = imp.newCars.filter(function (c) { return !c.vin; }).length;
+    imp.noEmp = imp.newCars.filter(function (c) { return !c.emp; }).length;
+    imp.state = 'done';
+    renderImport();
+  }
+
+  /* ---------- Copier ---------- */
+  async function copyReport() {
+    var ta = $('#report');
+    if (!ta) return;
+    try {
+      await navigator.clipboard.writeText(ta.value);
+      toast('Texte copié');
+      return;
+    } catch (e) {}
+    ta.focus();
+    ta.select();
+    ta.setSelectionRange(0, ta.value.length);
+    var ok = false;
+    try { ok = document.execCommand('copy'); } catch (e) {}
+    toast(ok ? 'Texte copié' : 'Texte sélectionné : copie-le à la main');
+  }
+
+  /* ---------- Événements ---------- */
+  document.addEventListener('click', function (e) {
+    var t = e.target.closest('[data-action]');
+    if (!t) return;
+    var a = t.dataset.action;
+    if (a === 'tab') { switchTab(t.dataset.tab); }
+    else if (a === 'set') {
+      var card = t.closest('.car');
+      var c = card && byId(card.dataset.id);
+      if (!c) return;
+      c.st = c.st === t.dataset.st ? '' : t.dataset.st;
+      save();
+      card.dataset.st = c.st;
+      card.querySelectorAll('.pick').forEach(function (b) { b.setAttribute('aria-pressed', String(b.dataset.st === c.st)); });
+      renderCounts();
+    }
+    else if (a === 'vin-ok') {
+      var vc = t.closest('.car');
+      var vcar = vc && byId(vc.dataset.id);
+      if (vcar) { vcar.chk = false; vcar.unc = []; save(); renderList(); }
+    }
+    else if (a === 'filter') { filter = t.dataset.f; renderList(); }
+    else if (a === 'show-chk') { filter = 'chk'; query = ''; var qi = $('#q'); if (qi) qi.value = ''; switchTab('controle'); }
+    else if (a === 'edit') { var cc = t.closest('.car'); if (cc) openSheet(cc.dataset.id); }
+    else if (a === 'add') { openSheet(null); }
+    else if (a === 'sheet-close') { closeSheet(); }
+    else if (a === 'del') {
+      if (!confirmDel) {
+        confirmDel = true;
+        t.textContent = 'Confirmer la suppression';
+        t.className = 'btn btn--danger-solid';
+      } else {
+        cars = cars.filter(function (x) { return x.id !== editingId; });
+        save();
+        closeSheet();
+        renderAll();
+        toast('Voiture supprimée');
+      }
+    }
+    else if (a === 'found') {
+      var fc = t.closest('.car');
+      var fcar = fc && byId(fc.dataset.id);
+      if (fcar) { fcar.st = ''; save(); renderAll(); toast('Voiture retrouvée'); }
+    }
+    else if (a === 'copy') { copyReport(); }
+    else if (a === 'clear') { confirmClear = true; renderReport(); }
+    else if (a === 'clear-cancel') { confirmClear = false; renderReport(); }
+    else if (a === 'clear-ok') {
+      cars = [];
+      confirmClear = false;
+      filter = 'all';
+      save();
+      renderAll();
+      toast('Liste effacée');
+    }
+    else if (a === 'stop') { if (imp && imp.ctl) imp.ctl.abort(); }
+    else if (a === 'dismiss-import') { imp = null; renderImport(); }
+  });
+
+  document.addEventListener('submit', function (e) {
+    if (e.target.id !== 'car-form') return;
+    e.preventDefault();
+    var v = function (id) { return $('#' + id).value; };
+    var data = {
+      emp: clean(v('f-emp')),
+      plaque: normPlate(v('f-plaque')),
+      marque: clean(v('f-marque')),
+      modele: clean(v('f-modele')),
+      vin: normVin(v('f-vin'))
+    };
+    var err = $('#form-error');
+    if (!data.emp && !data.plaque && !data.vin) {
+      err.textContent = 'Renseigne au moins la plaque, le VIN ou l’emplacement.';
+      return;
+    }
+    if (editingId) {
+      var cur = byId(editingId);
+      var vinChanged = data.vin !== cur.vin;
+      Object.assign(cur, data);
+      if (vinChanged) { cur.chk = data.vin.length > 0 && data.vin.length !== 17; cur.unc = []; }
+    } else {
+      if (findDup(data)) { err.textContent = 'Cette voiture est déjà dans la liste.'; return; }
+      cars.push(fix(Object.assign({}, data, { st: '', chk: data.vin.length > 0 && data.vin.length !== 17 })));
+      toast('Voiture ajoutée');
+    }
+    save();
+    closeSheet();
+    renderAll();
+  });
+
+  document.addEventListener('input', function (e) {
+    if (e.target.id === 'q') { query = e.target.value; renderList(); }
+    else if (e.target.id === 'f-vin') {
+      var val = e.target.value.toUpperCase().replace(/\s/g, '');
+      if (val !== e.target.value) e.target.value = val;
+      $('#vin-count').textContent = val.length + ' / 17 caractères. Les 8 derniers vont dans le texte.';
+    }
+  });
+
+  document.addEventListener('keydown', function (e) {
+    if (e.key === 'Escape' && $('#car-form')) closeSheet();
+  });
+
+  $('#btn-import').addEventListener('click', function () { $('#files').click(); });
+  $('#files').addEventListener('change', function (e) {
+    var files = Array.prototype.slice.call(e.target.files);
+    e.target.value = '';
+    runImport(files);
+  });
+
+  /* ---------- Démarrage ---------- */
+  renderAll();
+  renderImport();
+})();
+</script>
+</body>
+</html>
