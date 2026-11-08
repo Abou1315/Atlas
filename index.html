@@ -61,7 +61,7 @@
 * { box-sizing: border-box; }
 html { -webkit-text-size-adjust: 100%; padding-top: env(safe-area-inset-top, 0px); padding-bottom: env(safe-area-inset-bottom, 0px); }
 body { margin: 0; background: var(--bg); color: var(--fg); font-family: var(--font-body); font-size: 15px; line-height: 1.35; }
-body::before { content: ""; position: fixed; inset: 0 0 auto; height: env(safe-area-inset-top, 0px); z-index: 10; background: var(--bg); }
+body::before { content: ""; position: fixed; top: 0; left: 0; right: 0; height: env(safe-area-inset-top, 0px); z-index: 10; background: var(--bg); }
 img { max-width: 100%; }
 [hidden] { display: none !important; }
 button, input { font: inherit; color: inherit; }
@@ -130,6 +130,24 @@ button { cursor: pointer; -webkit-tap-highlight-color: transparent; }
 .stat b { font-family: var(--font-display); font-size: 26px; line-height: 1; font-variant-numeric: tabular-nums; }
 .stat span { color: var(--muted); font-size: 12px; font-weight: 600; letter-spacing: 0.04em; text-transform: uppercase; }
 .stat--60 b { color: var(--c60); } .stat--70 b { color: var(--c70); } .stat--nf b { color: var(--cnf); }
+.sub--todo { color: var(--warn-fg); font-weight: 700; }
+.rv { display: block; }
+.rv__top { display: flex; align-items: center; justify-content: space-between; gap: 10px; padding: 0 0 12px; }
+.rv__top b { font-family: var(--font-display); font-size: 20px; letter-spacing: 0.04em; text-transform: uppercase; }
+.rv__body { display: grid; gap: 14px; align-content: start; }
+.rv__lbl { margin: 0 0 6px; color: var(--muted); font-size: 12px; font-weight: 700; letter-spacing: 0.08em; text-transform: uppercase; }
+.rv__shot { width: 100%; display: block; border: 1.5px solid var(--line); border-radius: 12px; background: #fff; }
+.rv__noshot { padding: 18px; border: 1.5px dashed var(--line); border-radius: 12px; color: var(--muted); text-align: center; }
+.rv__data { display: grid; gap: 10px; padding: 14px; background: var(--surface); border: 1.5px solid var(--line); border-radius: 14px; }
+.rv__data .plate, .rv__data .noplate { justify-self: start; }
+.rv__name { font-weight: 700; font-size: 18px; }
+.rv__vin { font-family: var(--font-mono); font-weight: 600; font-size: 22px; letter-spacing: 0.04em; line-height: 1.5; overflow-wrap: anywhere; }
+.rv__vin b { font-weight: 700; color: var(--fg); }
+.rv__vin button { border: 0; border-bottom: 2px dotted var(--muted); background: transparent; padding: 0 1px; font: inherit; color: inherit; border-radius: 0; }
+.rv__vin button.on { background: var(--warn-mark); color: var(--on-mark); border-bottom-color: transparent; border-radius: 4px; }
+.rv__hint { margin: 0; color: var(--muted); font-size: 13px; }
+.rv__foot { position: sticky; bottom: 0; display: grid; grid-template-columns: 1fr 2fr; gap: 8px; margin-top: 14px; padding: 10px 0 calc(10px + env(safe-area-inset-bottom, 0px)); background: var(--bg); border-top: 1px solid var(--line); }
+.rv__foot .full { grid-column: 1 / -1; }
 .pick:active { transform: scale(0.97); }
 .btn:active { opacity: 0.85; }
 .icon-btn { flex: none; width: 36px; height: 36px; display: grid; place-items: center; border: 1.5px solid var(--line); border-radius: 10px; background: var(--surface); }
@@ -148,7 +166,7 @@ button { cursor: pointer; -webkit-tap-highlight-color: transparent; }
 .vin b { font-weight: 600; font-size: 15px; color: var(--fg); }
 .vin__miss { font-family: var(--font-body); color: var(--danger-text); font-weight: 700; font-size: 14px; }
 .uc { position: relative; display: inline-block; margin: 0 1px; padding: 0 3px; border: 0; border-radius: 4px; background: var(--warn-mark); color: var(--on-mark); font: inherit; font-weight: 700; }
-.uc::after { content: ""; position: absolute; inset: -9px -3px; }
+.uc::after { content: ""; position: absolute; top: -9px; bottom: -9px; left: -3px; right: -3px; }
 .vwarn { display: flex; flex-wrap: wrap; align-items: center; gap: 8px; padding: 9px 11px; border-radius: 12px; background: var(--warn-bg); color: var(--warn-fg); border: 1.5px solid var(--warn-line); font-weight: 600; font-size: 14px; }
 .vwarn span { flex: 1 1 170px; min-width: 0; }
 .vwarn button { min-height: 40px; padding: 0 14px; border-radius: 10px; border: 1.5px solid var(--warn-fg); background: transparent; color: var(--warn-fg); font-weight: 700; font-size: 14px; }
@@ -200,7 +218,7 @@ button { cursor: pointer; -webkit-tap-highlight-color: transparent; }
 .tab__n { position: absolute; top: 5px; left: calc(50% + 7px); min-width: 19px; height: 19px; padding: 0 5px; border-radius: 10px; background: var(--ink); color: var(--on-ink); font-size: 11px; line-height: 19px; text-align: center; }
 
 /* Fiche */
-.scrim { position: fixed; inset: 0; z-index: 40; background: var(--scrim); }
+.scrim { position: fixed; top: 0; right: 0; bottom: 0; left: 0; z-index: 40; background: var(--scrim); }
 .sheet { position: fixed; left: 0; right: 0; bottom: 0; z-index: 50; max-width: 640px; max-height: 92%; margin: 0 auto; overflow-y: auto; display: grid; gap: 12px; padding: 16px max(16px, env(safe-area-inset-right, 0px)) calc(16px + env(safe-area-inset-bottom, 0px)) max(16px, env(safe-area-inset-left, 0px)); background: var(--surface); border-radius: 18px 18px 0 0; }
 .field { display: grid; gap: 5px; min-width: 0; }
 .field label { font-weight: 600; font-size: 13px; }
@@ -234,6 +252,7 @@ button { cursor: pointer; -webkit-tap-highlight-color: transparent; }
       <input type="file" id="files" accept="image/*" multiple hidden>
       <div id="import-area" aria-live="polite"></div>
       <div class="stats" id="stats" hidden></div>
+      <div id="review-bar"></div>
       <div class="tools" id="tools" hidden>
         <input type="search" id="q" placeholder="Chercher plaque, VIN, emplacement" aria-label="Chercher une voiture" autocomplete="off">
         <div class="chips" id="chips"></div>
@@ -243,6 +262,7 @@ button { cursor: pointer; -webkit-tap-highlight-color: transparent; }
     <section id="view-change" aria-label="À changer" hidden></section>
     <section id="view-nf" aria-label="Introuvables" hidden></section>
     <section id="view-report" aria-label="Texte final" hidden></section>
+    <section id="view-rv" aria-label="Comparer avec les captures" hidden></section>
   </div>
 </main>
 
@@ -463,7 +483,9 @@ button { cursor: pointer; -webkit-tap-highlight-color: transparent; }
       });
       idxs.forEach(function (i) { used[i] = 1; });
       used[ai] = 1;
-      out.push(buildCard(idxs.sort(byY), info[ai].vin, a));
+      var cd = buildCard(idxs.sort(byY), info[ai].vin, a);
+      cd.cardBox = { y0: a.cy - 0.72 * sp, y1: a.cy + 0.2 * sp };
+      out.push(cd);
     });
 
     lines.forEach(function (l, i) {
@@ -473,7 +495,9 @@ button { cursor: pointer; -webkit-tap-highlight-color: transparent; }
         if (!used[j] && !info[j].vin && m.cy > l.cy - 0.3 * sp && m.cy <= l.cy + 0.7 * sp) idxs.push(j);
       });
       idxs.forEach(function (j) { used[j] = 1; });
-      out.push(buildCard(idxs.sort(byY), '', l));
+      var cd2 = buildCard(idxs.sort(byY), '', l);
+      cd2.cardBox = { y0: l.cy - 0.3 * sp, y1: l.cy + 0.7 * sp };
+      out.push(cd2);
     });
     /* L'emplacement est celui dont le préfixe (GRO, ...) revient le plus souvent sur la capture. */
     var cnt = {}, dom = '', dn = 1, pf;
@@ -503,22 +527,33 @@ button { cursor: pointer; -webkit-tap-highlight-color: transparent; }
       vin: String(c.vin || ''),
       emp: String(c.emp || ''),
       st: (c.st === '60' || c.st === '70' || c.st === 'nf') ? c.st : '',
+      ok: c.ok === undefined ? true : !!c.ok,
+      img: typeof c.img === 'string' ? c.img : '',
       chk: !!c.chk,
       unc: Array.isArray(c.unc) ? c.unc.filter(function (n) { return typeof n === 'number'; }) : []
     };
   }
+  var IKEY = 'controle-batteries-img-v1';
   function load() {
+    var imgs = {};
+    try { imgs = JSON.parse(localStorage.getItem(IKEY) || '{}') || {}; } catch (e) {}
     try {
       var raw = localStorage.getItem(KEY);
       if (raw) {
         var d = JSON.parse(raw);
-        if (d && Array.isArray(d.cars)) return d.cars.map(fix);
+        if (d && Array.isArray(d.cars)) return d.cars.map(function (c) { c.img = imgs[c.id] || ''; return fix(c); });
       }
     } catch (e) {}
     return [];
   }
   function save() {
-    try { localStorage.setItem(KEY, JSON.stringify({ cars: cars })); } catch (e) {}
+    /* Les voitures sont enregistrées à part des images : si la place manque, seules les images sautent, jamais les voitures. */
+    try { localStorage.setItem(KEY, JSON.stringify({ cars: cars.map(function (c) { var o = Object.assign({}, c); delete o.img; return o; }) })); } catch (e) {}
+    try {
+      var m = {};
+      cars.forEach(function (c) { if (c.img) m[c.id] = c.img; });
+      localStorage.setItem(IKEY, JSON.stringify(m));
+    } catch (e) { try { localStorage.removeItem(IKEY); } catch (e2) {} }
   }
 
   function normVin(v) {
@@ -740,7 +775,7 @@ button { cursor: pointer; -webkit-tap-highlight-color: transparent; }
   function nameHtml(c) {
     var name = [c.marque, c.modele].filter(Boolean).join(' ') || 'Voiture';
     var yr = vinYear(c.vin), g = genOf(c);
-    return '<div class="nm"><div class="name">' + esc(name) + '</div>' + (yr ? '<div class="sub">' + (g ? 'Phase ' + g.lab + ' \u00b7 ' : '') + yr + '</div>' : '') + '</div>';
+    return '<div class="nm"><div class="name">' + esc(name) + '</div>' + (yr ? '<div class="sub">' + (g ? 'Phase ' + g.lab + ' \u00b7 ' : '') + yr + '</div>' : '') + (c.ok ? '' : '<div class="sub sub--todo">\u00c0 comparer avec la capture</div>') + '</div>';
   }
   function editBtn() { return '<button type="button" class="icon-btn" data-action="edit" aria-label="Modifier cette voiture">' + ICON_EDIT + '</button>'; }
   function pick(c, st) {
@@ -787,12 +822,65 @@ button { cursor: pointer; -webkit-tap-highlight-color: transparent; }
     stEl.innerHTML = '<div class="stat stat--60"><b>' + n('60') + '</b><span>60 Ah</span></div><div class="stat stat--70"><b>' + n('70') + '</b><span>70 Ah</span></div><div class="stat stat--nf"><b>' + n('nf') + '</b><span>Introuvables</span></div>';
   }
 
+  function todoList() { return sortCars(cars.filter(function (c) { return !c.ok; })); }
+  var rv = null, rvBack = false;
+
+  function renderReviewBar() {
+    var n = todoList().length, el = $('#review-bar');
+    el.innerHTML = n ? '<button type="button" class="btn" style="margin-top:12px" data-action="rv-start">Comparer avec les captures (' + n + ')</button>' : '';
+  }
+
+  function reviewVin(v, i) {
+    var out = '', k, ch, cut = Math.max(0, v.length - 8);
+    for (k = 0; k < v.length; k++) {
+      ch = esc(v.charAt(k));
+      if (TWIN[v.charAt(k)]) ch = '<button type="button" data-action="rv-swap" data-i="' + k + '" aria-label="Caractère ' + (k + 1) + ' : ' + ch + ', toucher pour échanger">' + ch + '</button>';
+      if (k === cut) out += '<b>';
+      out += ch;
+    }
+    return out + (v.length > cut ? '</b>' : '');
+  }
+
+  function renderReview() {
+    var root = $('#view-rv');
+    if (!rv) { root.hidden = true; root.innerHTML = ''; $('.nav').hidden = false; switchTab(tab); return; }
+    var c = byId(rv.ids[rv.i]);
+    if (!c) { rv = null; renderReview(); renderAll(); return; }
+    var name = [c.marque, c.modele].filter(Boolean).join(' ') || 'Voiture';
+    ['controle', 'change', 'nf', 'report'].forEach(function (t) { $('#view-' + t).hidden = true; });
+    $('.nav').hidden = true;
+    root.hidden = false;
+    root.innerHTML = '<div class="rv">' +
+      '<div class="rv__top"><b>Voiture ' + (rv.i + 1) + ' / ' + rv.ids.length + '</b><button type="button" class="chip" data-action="rv-close">Fermer</button></div>' +
+      '<div class="rv__body">' +
+        '<div><p class="rv__lbl">Sur la capture</p>' + (c.img ? '<img class="rv__shot" alt="Ligne de la voiture sur ta capture" src="' + c.img + '">' : '<div class="rv__noshot">Pas d\u2019image enregistrée pour cette voiture.</div>') + '</div>' +
+        '<div><p class="rv__lbl">Ce que l\u2019appli a lu</p><div class="rv__data">' +
+          '<div class="rv__name">' + esc(name) + (c.emp ? ' \u00b7 ' + esc(c.emp) : '') + '</div>' +
+          plateHtml(c) +
+          (c.vin ? '<div class="rv__vin">' + reviewVin(c.vin) + '</div><p class="rv__hint">Un caractère souligné peut se confondre (S/5, B/8, Z/2, G/6, D/0). Touche-le pour l\u2019échanger.</p>' : '<div class="vin__miss">VIN manquant</div>') +
+          '<div class="sub">' + (c.vin ? c.vin.length + ' caractères' : '') + '</div>' +
+        '</div></div>' +
+      '</div>' +
+      '<div class="rv__foot"><button type="button" class="btn btn--ghost" data-action="rv-edit">Corriger</button><button type="button" class="btn btn--primary" data-action="rv-ok">C\u2019est identique \u2713</button>' +
+      (rv.i > 0 ? '<button type="button" class="btn btn--ghost full" data-action="rv-prev">Voiture précédente</button>' : '') + '</div></div>';
+    window.scrollTo(0, 0);
+  }
+
+  function startReview() {
+    var l = todoList();
+    if (!l.length) return;
+    rv = { ids: l.map(function (c) { return c.id; }), i: 0 };
+    window.scrollTo(0, 0);
+    renderReview();
+  }
+
   function renderList() {
     var el = $('#list');
     var nchk = cars.filter(function (c) { return c.chk && c.vin; }).length;
     if (!nchk && filter === 'chk') filter = 'all';
     $('#tools').hidden = !cars.length;
     renderStats();
+    renderReviewBar();
     var chips = $('#chips');
     chips.hidden = !nchk;
     if (nchk) {
@@ -864,6 +952,8 @@ button { cursor: pointer; -webkit-tap-highlight-color: transparent; }
       html += '<textarea class="report" id="report" readonly wrap="off" rows="' + Math.max(3, lines.length + 1) + '" aria-label="Texte final">' + esc(lines.join('\n')) + '</textarea>' +
         '<button type="button" class="btn btn--primary" data-action="copy">Copier le texte</button>' +
         '<p class="legend"><b>T</b> = a démarré (' + t + ') · <b>TC</b> = batterie changée (' + tc + ')</p>';
+      var todo = inc.filter(function (c) { return !c.ok; }).length;
+      if (todo) html += '<div class="vwarn"><span>' + todo + ' ' + plural(todo, 'voiture pas encore comparée', 'voitures pas encore comparées') + ' à la capture.</span><button type="button" data-action="rv-start">Comparer</button></div>';
       var bad = inc.filter(function (c) { return (c.chk && c.vin) || !c.vin; });
       if (bad.length) {
         html += '<div class="vwarn"><span>' + bad.length + ' VIN à vérifier dans ce texte : ' +
@@ -962,7 +1052,7 @@ button { cursor: pointer; -webkit-tap-highlight-color: transparent; }
       '</form>';
     if (!id) setTimeout(function () { var f = $('#f-emp'); if (f) f.focus(); }, 30);
   }
-  function closeSheet() { $('#sheet-root').innerHTML = ''; editingId = null; confirmDel = false; }
+  function closeSheet() { editingId = null; confirmDel = false; $('#sheet-root').innerHTML = ''; if (rv && rvBack) { rvBack = false; renderReview(); } }
 
   /* ---------- Ajout des voitures lues ---------- */
   function addExtracted(arr) {
@@ -976,6 +1066,8 @@ button { cursor: pointer; -webkit-tap-highlight-color: transparent; }
         vin: normVin(r.vin),
         emp: clean(r.emplacement),
         st: '',
+        ok: !!(r.sure && /^[A-Z]{2} \d{3} [A-Z]{2}$/.test(normPlate(r.plaque)) && clean(r.marque) && clean(r.modele) && clean(r.emplacement)),
+        img: r.img || '',
         chk: r.chk,
         unc: r.unc
       });
@@ -987,6 +1079,7 @@ button { cursor: pointer; -webkit-tap-highlight-color: transparent; }
         if (!ex.marque && c.marque) ex.marque = c.marque;
         if (!ex.modele && c.modele) ex.modele = c.modele;
         if (!ex.emp && c.emp) ex.emp = c.emp;
+        if (!ex.img && c.img) ex.img = c.img;
         dup++;
         return;
       }
@@ -1106,6 +1199,22 @@ button { cursor: pointer; -webkit-tap-highlight-color: transparent; }
     return out;
   }
 
+  /* Image de la voiture telle qu'elle apparaît sur la capture, pour comparer à l'œil. */
+  function cardImage(src, box) {
+    try {
+      var sc = src.scale, bmp = src.bmp;
+      var sy = Math.max(0, Math.floor(box.y0 / sc)), sh = Math.min(bmp.height - sy, Math.ceil((box.y1 - box.y0) / sc));
+      if (sh < 20) return '';
+      var ow = Math.min(bmp.width, 640), oh = Math.max(10, Math.round(sh * ow / bmp.width));
+      var cv = document.createElement('canvas');
+      cv.width = ow; cv.height = oh;
+      var ctx = cv.getContext('2d');
+      ctx.imageSmoothingQuality = 'high';
+      ctx.drawImage(bmp, 0, sy, bmp.width, sh, 0, 0, ow, oh);
+      return cv.toDataURL('image/jpeg', 0.62);
+    } catch (e) { return ''; }
+  }
+
   function vinFromText(t) {
     var parts = String(t || '').split(/\r?\n/), best = '', i, n;
     for (i = 0; i < parts.length; i++) {
@@ -1215,6 +1324,7 @@ button { cursor: pointer; -webkit-tap-highlight-color: transparent; }
           }
         }
         car.vin = res.vin; car.unc = res.unc; car.chk = res.chk;
+        car.sure = !res.chk && !res.dis.length && res.vin.length === 17;
       }
     } finally {
       await setMode(w, 'page');
@@ -1248,6 +1358,7 @@ button { cursor: pointer; -webkit-tap-highlight-color: transparent; }
           imp.failed.push(i + 1);
         } else {
           imp.found += list.length;
+          list.forEach(function (c) { if (c.cardBox) c.img = cardImage(p, c.cardBox); });
           imp.phase = 'Capture ' + (i + 1) + ' : vérification des VIN…';
           renderImport();
           await verifyVins(w, p, list, ctl);
@@ -1325,6 +1436,24 @@ button { cursor: pointer; -webkit-tap-highlight-color: transparent; }
         renderList();
       }
     }
+    else if (a === 'rv-start') { startReview(); }
+    else if (a === 'rv-close') { rv = null; renderReview(); }
+    else if (a === 'rv-prev') { if (rv && rv.i > 0) { rv.i--; renderReview(); } }
+    else if (a === 'rv-ok') {
+      var rc = rv && byId(rv.ids[rv.i]);
+      if (rc) { rc.ok = true; save(); }
+      if (rv && rv.i < rv.ids.length - 1) { rv.i++; renderReview(); }
+      else { rv = null; renderReview(); toast('Toutes les voitures sont comparées'); }
+    }
+    else if (a === 'rv-swap') {
+      var sw = rv && byId(rv.ids[rv.i]), si2 = parseInt(t.dataset.i, 10);
+      if (sw && sw.vin && TWIN[sw.vin.charAt(si2)]) {
+        sw.vin = sw.vin.slice(0, si2) + TWIN[sw.vin.charAt(si2)] + sw.vin.slice(si2 + 1);
+        sw.chk = false; sw.unc = [];
+        save(); renderReview();
+      }
+    }
+    else if (a === 'rv-edit') { var ec = rv && rv.ids[rv.i]; if (ec) { rvBack = true; openSheet(ec); } }
     else if (a === 'filter') { filter = t.dataset.f; renderList(); }
     else if (a === 'show-chk') { filter = 'chk'; query = ''; var qi = $('#q'); if (qi) qi.value = ''; switchTab('controle'); }
     else if (a === 'edit') { var cc = t.closest('.car'); if (cc) openSheet(cc.dataset.id); }
@@ -1383,10 +1512,11 @@ button { cursor: pointer; -webkit-tap-highlight-color: transparent; }
       var cur = byId(editingId);
       var vinChanged = data.vin !== cur.vin;
       Object.assign(cur, data);
+      cur.ok = true;
       if (vinChanged) { cur.chk = data.vin.length > 0 && data.vin.length !== 17; cur.unc = []; }
     } else {
       if (findDup(data)) { err.textContent = 'Cette voiture est déjà dans la liste.'; return; }
-      cars.push(fix(Object.assign({}, data, { st: '', chk: data.vin.length > 0 && data.vin.length !== 17 })));
+      cars.push(fix(Object.assign({}, data, { st: '', ok: true, chk: data.vin.length > 0 && data.vin.length !== 17 })));
       toast('Voiture ajoutée');
     }
     save();
@@ -1413,6 +1543,8 @@ button { cursor: pointer; -webkit-tap-highlight-color: transparent; }
     e.target.value = '';
     runImport(files);
   });
+
+  window.addEventListener('error', function (e) { toast('Erreur : ' + (e && e.message ? e.message : 'inconnue')); });
 
   /* ---------- Démarrage ---------- */
   renderAll();
