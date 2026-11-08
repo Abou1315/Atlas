@@ -1614,15 +1614,24 @@ button { cursor: pointer; -webkit-tap-highlight-color: transparent; }
     });
     if (changed) { save(); renderAll(); }
   }
-  function applyRemoteDays(snap) {
-    var changed = false;
+  function applyRemoteDays(snap, first) {
+    var changed = false, seen = {};
     snap.docChanges().forEach(function (ch) {
+      var k = ch.doc.id, loc, ids, extra;
+      seen[k] = 1;
       if (ch.doc.metadata && ch.doc.metadata.hasPendingWrites) return;
-      if (ch.type === 'removed') { if (hist[ch.doc.id]) { delete hist[ch.doc.id]; changed = true; } return; }
-      var d = ch.doc.data();
-      hist[ch.doc.id] = { cars: Array.isArray(d.cars) ? d.cars : [], t: d.t || 0 };
+      if (ch.type === 'removed') { if (hist[k]) { delete hist[k]; changed = true; } return; }
+      var d = ch.doc.data(), rc = Array.isArray(d.cars) ? d.cars : [];
+      loc = hist[k] ? hist[k].cars : [];
+      ids = {};
+      rc.forEach(function (c) { ids[c.id] = 1; });
+      extra = loc.filter(function (c) { return !ids[c.id]; });
+      hist[k] = { cars: rc.concat(extra), t: d.t || 0 };
+      if (extra.length) pushDay(k);
       changed = true;
     });
+    /* À la connexion, les journées déjà enregistrées sur ce téléphone et absentes du partage sont envoyées. */
+    if (first) Object.keys(hist).forEach(function (k) { if (!seen[k]) pushDay(k); });
     if (changed) { saveHist(); if (tab === 'hist') renderHist(); }
   }
 
@@ -1641,7 +1650,8 @@ button { cursor: pointer; -webkit-tap-highlight-color: transparent; }
       if (first) { first = false; setTeamState('on'); syncPush(); }
       else if (team.state !== 'on') setTeamState('on');
     }, onErr));
-    unsubs.push(teamRef().collection('days').onSnapshot(applyRemoteDays, onErr));
+    var firstD = true;
+    unsubs.push(teamRef().collection('days').onSnapshot(function (snap) { var f = firstD; firstD = false; applyRemoteDays(snap, f); }, onErr));
   }
   function leaveShare() {
     stopSync();
