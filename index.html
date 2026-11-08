@@ -74,6 +74,13 @@ button { cursor: pointer; -webkit-tap-highlight-color: transparent; }
 .top { position: sticky; top: env(safe-area-inset-top, 0px); z-index: 20; background: var(--bg); border-bottom: 1px solid var(--line); }
 .top .in { display: flex; align-items: center; justify-content: space-between; gap: 12px; padding-block: 11px; }
 .brand { margin: 0; min-width: 0; font-family: var(--font-display); font-weight: 700; font-size: 18px; line-height: 1; letter-spacing: 0.04em; text-transform: uppercase; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+.hdr-r { display: flex; align-items: center; gap: 8px; flex: none; }
+.share-btn { position: relative; width: 38px; height: 34px; display: grid; place-items: center; border-radius: 10px; border: 1.5px solid var(--line); background: var(--surface); color: var(--muted); }
+.share-btn.on { color: var(--fg); border-color: var(--ink); }
+.dot { position: absolute; top: -3px; right: -3px; width: 11px; height: 11px; border-radius: 50%; border: 2px solid var(--bg); background: #2da44e; }
+.dot.busy { background: var(--c60); }
+.dot.err { background: var(--cnf); }
+.code { padding: 12px; text-align: center; border: 1.5px dashed var(--ink); border-radius: 12px; font-family: var(--font-mono); font-weight: 600; font-size: 24px; letter-spacing: 0.08em; user-select: all; -webkit-user-select: all; }
 .count { flex: none; padding: 4px 10px; border-radius: 999px; background: var(--surface-2); font-weight: 600; font-size: 13px; color: var(--muted); font-variant-numeric: tabular-nums; white-space: nowrap; }
 .main .in { padding-block: 14px calc(88px + env(safe-area-inset-bottom, 0px)); }
 
@@ -130,6 +137,17 @@ button { cursor: pointer; -webkit-tap-highlight-color: transparent; }
 .stat b { font-family: var(--font-display); font-size: 26px; line-height: 1; font-variant-numeric: tabular-nums; }
 .stat span { color: var(--muted); font-size: 12px; font-weight: 600; letter-spacing: 0.04em; text-transform: uppercase; }
 .stat--60 b { color: var(--c60); } .stat--70 b { color: var(--c70); } .stat--nf b { color: var(--cnf); }
+.cal { display: grid; gap: 10px; }
+.cal__bar { display: flex; align-items: center; justify-content: space-between; gap: 8px; }
+.cal__bar .h2 { margin: 0; text-transform: capitalize; font-size: 22px; }
+.cal__grid { display: grid; grid-template-columns: repeat(7, minmax(0, 1fr)); gap: 5px; }
+.cal__dow { text-align: center; color: var(--muted); font-size: 11px; font-weight: 700; text-transform: uppercase; }
+.cal__d { position: relative; aspect-ratio: 1 / 1; min-height: 44px; display: grid; place-items: center; border-radius: 10px; border: 1.5px solid transparent; background: transparent; color: var(--muted); font-family: var(--font-display); font-weight: 600; font-size: 18px; }
+.cal__d--has { background: var(--surface); border-color: var(--line); color: var(--fg); }
+.cal__d--today { border-color: var(--ink); }
+.cal__d small { position: absolute; bottom: 3px; left: 0; right: 0; text-align: center; font-family: var(--font-body); font-weight: 700; font-size: 10px; color: var(--muted); }
+.cal__d--blank { visibility: hidden; }
+.tag--st { margin-left: auto; }
 .sub--todo { color: var(--warn-fg); font-weight: 700; }
 .rv { display: block; }
 .rv__top { display: flex; align-items: center; justify-content: space-between; gap: 10px; padding: 0 0 12px; }
@@ -212,8 +230,8 @@ button { cursor: pointer; -webkit-tap-highlight-color: transparent; }
 
 /* Barre d'onglets */
 .nav { position: fixed; left: 0; right: 0; bottom: 0; z-index: 30; background: var(--surface); border-top: 1px solid var(--line); padding-bottom: env(safe-area-inset-bottom, 0px); }
-.nav .in { display: grid; grid-template-columns: repeat(4, minmax(0, 1fr)); }
-.tab { position: relative; min-height: 60px; padding: 8px 2px 7px; display: flex; flex-direction: column; align-items: center; gap: 3px; border: 0; border-top: 3px solid transparent; background: transparent; color: var(--muted); font-weight: 600; font-size: 12px; }
+.nav .in { display: grid; grid-template-columns: repeat(5, minmax(0, 1fr)); }
+.tab { position: relative; min-height: 60px; padding: 8px 1px 7px; display: flex; flex-direction: column; align-items: center; gap: 3px; border: 0; border-top: 3px solid transparent; background: transparent; color: var(--muted); font-weight: 600; font-size: 11px; }
 .tab[aria-current="page"] { color: var(--fg); border-top-color: var(--fg); }
 .tab__n { position: absolute; top: 5px; left: calc(50% + 7px); min-width: 19px; height: 19px; padding: 0 5px; border-radius: 10px; background: var(--ink); color: var(--on-ink); font-size: 11px; line-height: 19px; text-align: center; }
 
@@ -235,7 +253,13 @@ button { cursor: pointer; -webkit-tap-highlight-color: transparent; }
 <header class="top">
   <div class="in">
     <h1 class="brand">Contrôle batteries</h1>
-    <span class="count" id="count">0 voiture</span>
+    <div class="hdr-r">
+      <button type="button" class="share-btn" id="share-btn" data-action="share" aria-label="Partage">
+        <svg width="20" height="20" viewBox="0 0 24 24" aria-hidden="true"><circle cx="9" cy="8" r="3.2" fill="none" stroke="currentColor" stroke-width="2"/><path d="M3 19c.6-3.4 3-5 6-5s5.4 1.6 6 5" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"/><circle cx="17" cy="9" r="2.4" fill="none" stroke="currentColor" stroke-width="2"/><path d="M17 14c2.2.2 3.6 1.5 4 4" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"/></svg>
+        <i class="dot" id="share-dot" hidden></i>
+      </button>
+      <span class="count" id="count">0 voiture</span>
+    </div>
   </div>
 </header>
 
@@ -262,6 +286,7 @@ button { cursor: pointer; -webkit-tap-highlight-color: transparent; }
     <section id="view-change" aria-label="À changer" hidden></section>
     <section id="view-nf" aria-label="Introuvables" hidden></section>
     <section id="view-report" aria-label="Texte final" hidden></section>
+    <section id="view-hist" aria-label="Historique" hidden></section>
     <section id="view-rv" aria-label="Comparer avec les captures" hidden></section>
   </div>
 </main>
@@ -285,6 +310,10 @@ button { cursor: pointer; -webkit-tap-highlight-color: transparent; }
     <button type="button" class="tab" data-action="tab" data-tab="report">
       <svg width="22" height="22" viewBox="0 0 24 24" aria-hidden="true"><rect x="5" y="3.5" width="14" height="17" rx="1.5" fill="none" stroke="currentColor" stroke-width="2"/><path d="M8.5 9h7M8.5 13h7M8.5 17h4" stroke="currentColor" stroke-width="2" fill="none"/></svg>
       <span>Texte</span>
+    </button>
+    <button type="button" class="tab" data-action="tab" data-tab="hist">
+      <svg width="22" height="22" viewBox="0 0 24 24" aria-hidden="true"><rect x="3.5" y="5" width="17" height="15" rx="2" fill="none" stroke="currentColor" stroke-width="2"/><path d="M3.5 10h17M8 3v4M16 3v4" stroke="currentColor" stroke-width="2" fill="none"/></svg>
+      <span>Historique</span>
     </button>
   </div>
 </nav>
@@ -554,6 +583,7 @@ button { cursor: pointer; -webkit-tap-highlight-color: transparent; }
       cars.forEach(function (c) { if (c.img) m[c.id] = c.img; });
       localStorage.setItem(IKEY, JSON.stringify(m));
     } catch (e) { try { localStorage.removeItem(IKEY); } catch (e2) {} }
+    syncSoon();
   }
 
   function normVin(v) {
@@ -732,6 +762,22 @@ button { cursor: pointer; -webkit-tap-highlight-color: transparent; }
     return lab ? { lab: lab } : null;
   }
 
+  /* ---------- Historique des journées ---------- */
+  var HKEY = 'controle-batteries-hist-v1';
+  var hist = {};
+  try { hist = JSON.parse(localStorage.getItem(HKEY) || '{}') || {}; } catch (e) { hist = {}; }
+  function saveHist() {
+    try { localStorage.setItem(HKEY, JSON.stringify(hist)); return true; } catch (e) { return false; }
+  }
+  function dayKey(d) {
+    var m = d.getMonth() + 1, j = d.getDate();
+    return d.getFullYear() + '-' + (m < 10 ? '0' : '') + m + '-' + (j < 10 ? '0' : '') + j;
+  }
+  function dayLabel(k) {
+    var p = k.split('-');
+    return new Date(+p[0], +p[1] - 1, +p[2]).toLocaleDateString('fr-FR', { weekday: 'long', day: 'numeric', month: 'long', year: 'numeric' });
+  }
+
   /* ---------- État ---------- */
   var cars = load();
   var tab = 'controle';
@@ -740,6 +786,8 @@ button { cursor: pointer; -webkit-tap-highlight-color: transparent; }
   var editingId = null;
   var confirmDel = false;
   var confirmClear = false;
+  var hm = (function () { var n = new Date(); return { y: n.getFullYear(), m: n.getMonth() }; })();
+  var hDay = null, hConfirmDel = false;
   var imp = null;
   var toastT = null;
 
@@ -847,7 +895,7 @@ button { cursor: pointer; -webkit-tap-highlight-color: transparent; }
     var c = byId(rv.ids[rv.i]);
     if (!c) { rv = null; renderReview(); renderAll(); return; }
     var name = [c.marque, c.modele].filter(Boolean).join(' ') || 'Voiture';
-    ['controle', 'change', 'nf', 'report'].forEach(function (t) { $('#view-' + t).hidden = true; });
+    ['controle', 'change', 'nf', 'report', 'hist'].forEach(function (t) { $('#view-' + t).hidden = true; });
     $('.nav').hidden = true;
     root.hidden = false;
     root.innerHTML = '<div class="rv">' +
@@ -963,14 +1011,62 @@ button { cursor: pointer; -webkit-tap-highlight-color: transparent; }
     if (nf) html += '<p class="legend">' + nf + ' ' + plural(nf, 'voiture introuvable n’est', 'voitures introuvables ne sont') + ' pas dans ce texte.</p>';
     html += '</div>';
     if (cars.length) {
-      html += '<div class="sep"><h2 class="h2" style="margin:0">Nouvelle journée</h2>' +
-        '<p class="legend">Efface toute la liste avant d’importer les voitures du jour suivant.</p>';
-      if (!confirmClear) html += '<button type="button" class="btn btn--danger" data-action="clear">Tout effacer</button>';
-      else html += '<div class="duo"><button type="button" class="btn btn--ghost" data-action="clear-cancel">Annuler</button>' +
-        '<button type="button" class="btn btn--danger-solid" data-action="clear-ok">Effacer ' + cars.length + ' ' + plural(cars.length, 'voiture', 'voitures') + '</button></div>';
+      var nn = cars.length + ' ' + plural(cars.length, 'voiture', 'voitures');
+      html += '<div class="sep"><h2 class="h2" style="margin:0">Fin de journ\u00e9e</h2>' +
+        '<p class="legend">Enregistre la liste dans l\u2019historique, puis repars de z\u00e9ro pour le lendemain.</p>';
+      if (!confirmClear) html += '<button type="button" class="btn btn--primary" data-action="clear-save">Terminer la journ\u00e9e</button>' +
+        '<button type="button" class="btn btn--ghost" data-action="clear-wipe">Effacer sans enregistrer</button>';
+      else if (confirmClear === 'save') html += '<p class="legend">Enregistrer ' + nn + ' au ' + esc(dayLabel(dayKey(new Date()))) + ' et vider la liste' + (team.code ? ' (chez tous ceux qui partagent aussi)' : '') + ' ?</p><div class="duo"><button type="button" class="btn btn--ghost" data-action="clear-cancel">Annuler</button><button type="button" class="btn" data-action="clear-ok">Enregistrer</button></div>';
+      else html += '<p class="legend">Effacer ' + nn + ' sans rien garder' + (team.code ? ' (chez tous ceux qui partagent aussi)' : '') + ' ?</p><div class="duo"><button type="button" class="btn btn--ghost" data-action="clear-cancel">Annuler</button><button type="button" class="btn btn--danger-solid" data-action="clear-ok">Effacer</button></div>';
       html += '</div>';
     }
     el.innerHTML = html;
+  }
+
+  function histCars(k) { return (hist[k] && hist[k].cars || []).map(function (c) { return fix(Object.assign({}, c, { img: '', ok: true })); }); }
+
+  function renderHist() {
+    var el = $('#view-hist');
+    if (hDay && hist[hDay]) {
+      var list = sortCars(histCars(hDay));
+      var inc = list.filter(function (c) { return c.st !== 'nf'; });
+      var tc = inc.filter(isChange).length, nf = list.length - inc.length;
+      var html = '<button type="button" class="btn btn--ghost" data-action="h-back" style="min-height:44px">\u2039 Calendrier</button>' +
+        '<h2 class="h2" style="margin:14px 0 8px;text-transform:capitalize;font-size:22px">' + esc(dayLabel(hDay)) + '</h2>' +
+        '<div class="sum" style="margin-bottom:12px"><span class="tag">' + list.length + ' ' + plural(list.length, 'voiture', 'voitures') + '</span><span class="tag">' + tc + ' TC</span><span class="tag">' + (inc.length - tc) + ' T</span>' + (nf ? '<span class="tag">' + nf + ' introuvable' + (nf > 1 ? 's' : '') + '</span>' : '') + '</div>';
+      if (inc.length) {
+        html += '<div class="block"><textarea class="report" id="hreport" readonly wrap="off" rows="' + Math.max(3, inc.length + 1) + '" aria-label="Texte de ce jour">' + esc(inc.map(reportLine).join('\n')) + '</textarea>' +
+          '<button type="button" class="btn btn--primary" data-action="h-copy">Copier le texte</button></div>';
+      }
+      html += '<h2 class="h2" style="margin:20px 0 10px">Voitures</h2><div class="list" style="margin-top:0">' +
+        list.map(function (c) {
+          var tag = c.st === '60' || c.st === '70' ? '<div class="badge badge--' + c.st + '"><span>' + c.st + '</span><small>Ah</small></div>' : '<span class="tag">' + (c.st === 'nf' ? 'Pas trouv\u00e9' : 'T') + '</span>';
+          return miniCard(c, tag);
+        }).join('') + '</div>' +
+        '<div class="sep">' + (!hConfirmDel
+          ? '<button type="button" class="btn btn--danger" data-action="h-del">Supprimer ce jour</button>'
+          : '<div class="duo"><button type="button" class="btn btn--ghost" data-action="h-del-cancel">Annuler</button><button type="button" class="btn btn--danger-solid" data-action="h-del-ok">Supprimer</button></div>') + '</div>';
+      el.innerHTML = html;
+      return;
+    }
+    hDay = null;
+    var first = new Date(hm.y, hm.m, 1), days = new Date(hm.y, hm.m + 1, 0).getDate(), lead = (first.getDay() + 6) % 7, today = dayKey(new Date());
+    var total = Object.keys(hist).length;
+    var g = '';
+    ['L', 'M', 'M', 'J', 'V', 'S', 'D'].forEach(function (d) { g += '<div class="cal__dow">' + d + '</div>'; });
+    var i, k, n;
+    for (i = 0; i < lead; i++) g += '<div class="cal__d cal__d--blank"></div>';
+    for (i = 1; i <= days; i++) {
+      k = hm.y + '-' + (hm.m + 1 < 10 ? '0' : '') + (hm.m + 1) + '-' + (i < 10 ? '0' : '') + i;
+      n = hist[k] ? hist[k].cars.length : 0;
+      if (n) g += '<button type="button" class="cal__d cal__d--has' + (k === today ? ' cal__d--today' : '') + '" data-action="h-open" data-k="' + k + '" aria-label="' + esc(dayLabel(k)) + ', ' + n + ' voitures">' + i + '<small>' + n + '</small></button>';
+      else g += '<div class="cal__d' + (k === today ? ' cal__d--today' : '') + '">' + i + '</div>';
+    }
+    el.innerHTML = '<div class="cal"><div class="cal__bar"><button type="button" class="icon-btn" data-action="h-prev" aria-label="Mois pr\u00e9c\u00e9dent">\u2039</button>' +
+      '<h2 class="h2">' + esc(first.toLocaleDateString('fr-FR', { month: 'long', year: 'numeric' })) + '</h2>' +
+      '<button type="button" class="icon-btn" data-action="h-next" aria-label="Mois suivant">\u203a</button></div>' +
+      '<div class="cal__grid">' + g + '</div>' +
+      (total ? '' : '<p class="note">Aucune journ\u00e9e enregistr\u00e9e pour l\u2019instant. Dans l\u2019onglet Texte, touche \u00ab\u00a0Terminer la journ\u00e9e\u00a0\u00bb pour garder ta liste ici.</p>') + '</div>';
   }
 
   function renderImport() {
@@ -1008,6 +1104,7 @@ button { cursor: pointer; -webkit-tap-highlight-color: transparent; }
     if (tab === 'controle') renderList();
     else if (tab === 'change') renderChange();
     else if (tab === 'nf') renderNF();
+    else if (tab === 'hist') renderHist();
     else renderReport();
   }
   function renderAll() { renderCounts(); renderView(); }
@@ -1015,7 +1112,7 @@ button { cursor: pointer; -webkit-tap-highlight-color: transparent; }
   function switchTab(name) {
     tab = name;
     if (name !== 'report') confirmClear = false;
-    ['controle', 'change', 'nf', 'report'].forEach(function (t) { $('#view-' + t).hidden = t !== name; });
+    ['controle', 'change', 'nf', 'report', 'hist'].forEach(function (t) { $('#view-' + t).hidden = t !== name; });
     document.querySelectorAll('.tab').forEach(function (b) {
       if (b.dataset.tab === name) b.setAttribute('aria-current', 'page'); else b.removeAttribute('aria-current');
     });
@@ -1387,8 +1484,8 @@ button { cursor: pointer; -webkit-tap-highlight-color: transparent; }
   }
 
   /* ---------- Copier ---------- */
-  async function copyReport() {
-    var ta = $('#report');
+  async function copyReport(sel) {
+    var ta = $(sel || '#report');
     if (!ta) return;
     try {
       await navigator.clipboard.writeText(ta.value);
@@ -1401,6 +1498,202 @@ button { cursor: pointer; -webkit-tap-highlight-color: transparent; }
     var ok = false;
     try { ok = document.execCommand('copy'); } catch (e) {}
     toast(ok ? 'Texte copié' : 'Texte sélectionné : copie-le à la main');
+  }
+
+
+  /* ---------- Partage entre appareils (Firebase) ---------- */
+  var FBCFG = { apiKey: 'AIzaSyAEOZtaE3ZAEBRudZko-NGvAPyJzrGfSc0', authDomain: 'atlasauto-70ca3.firebaseapp.com', projectId: 'atlasauto-70ca3', appId: '1:1000628827911:web:99e9563db8e0a41172b7a2' };
+  var FBV = '10.12.2';
+  var TKEY = 'controle-batteries-team-v1';
+  var team = { code: '', state: 'off', err: '' };
+  var db = null, fbLoading = null, unsubs = [], synced = {}, pushT = null, shareStep = '', pendingCode = '';
+
+  function fmtCode(c) { return String(c).replace(/(.{4})(?=.)/g, '$1-'); }
+  function newCode() {
+    var A = 'ABCDEFGHJKLMNPQRSTUVWXYZ23456789', a = new Uint8Array(12), o = '', i;
+    (window.crypto || window.msCrypto).getRandomValues(a);
+    for (i = 0; i < 12; i++) o += A.charAt(a[i] % A.length);
+    return o;
+  }
+  function normCode(v) { return String(v || '').toUpperCase().replace(/[^A-Z0-9]/g, ''); }
+  function cleanCar(c) { var o = Object.assign({}, c); delete o.img; return o; }
+  function loadScript(u) {
+    return new Promise(function (res, rej) {
+      var el = document.createElement('script');
+      el.src = u; el.onload = res; el.onerror = function () { rej(new Error('load')); };
+      document.head.appendChild(el);
+    });
+  }
+  function loadFb() {
+    if (fbLoading) return fbLoading;
+    fbLoading = (async function () {
+      if (!window.firebase) {
+        await loadScript('https://www.gstatic.com/firebasejs/' + FBV + '/firebase-app-compat.js');
+        await loadScript('https://www.gstatic.com/firebasejs/' + FBV + '/firebase-firestore-compat.js');
+      }
+      if (!firebase.apps.length) firebase.initializeApp(FBCFG);
+      db = firebase.firestore();
+      try { db.settings({ experimentalAutoDetectLongPolling: true, merge: true }); } catch (e) {}
+      return db;
+    })();
+    fbLoading.catch(function () { fbLoading = null; });
+    return fbLoading;
+  }
+  function teamRef() { return db.collection('teams').doc(team.code); }
+  function setTeamState(st, err) {
+    team.state = st; team.err = err || '';
+    var d = $('#share-dot'), b = $('#share-btn');
+    if (d && b) {
+      d.hidden = !team.code;
+      d.className = 'dot' + (st === 'on' ? '' : st === 'error' ? ' err' : ' busy');
+      b.classList.toggle('on', !!team.code);
+    }
+    if ($('#share-sheet')) renderShare();
+  }
+
+  function syncPush() {
+    pushT = null;
+    if (!db || !team.code || team.state !== 'on') return;
+    var batch = db.batch(), n = 0, now = {};
+    cars.forEach(function (c) {
+      var o = cleanCar(c), j = JSON.stringify(o);
+      now[c.id] = 1;
+      if (synced[c.id] !== j) { batch.set(teamRef().collection('cars').doc(c.id), o); synced[c.id] = j; n++; }
+    });
+    Object.keys(synced).forEach(function (id) {
+      if (!now[id]) { batch.delete(teamRef().collection('cars').doc(id)); delete synced[id]; n++; }
+    });
+    if (n) batch.commit().catch(function (e) { setTeamState('error', e && e.code || 'write'); });
+  }
+  function syncSoon() {
+    if (!team.code) return;
+    clearTimeout(pushT);
+    pushT = setTimeout(syncPush, 250);
+  }
+
+  function applyRemoteCars(snap) {
+    var changed = false;
+    snap.docChanges().forEach(function (ch) {
+      var id = ch.doc.id, i, ex, nc, j, dup;
+      if (ch.doc.metadata && ch.doc.metadata.hasPendingWrites) return;
+      if (ch.type === 'removed') {
+        i = cars.findIndex(function (c) { return c.id === id; });
+        if (i >= 0) { cars.splice(i, 1); changed = true; }
+        delete synced[id];
+        return;
+      }
+      var d = ch.doc.data(); d.id = id;
+      nc = fix(d);
+      ex = byId(id);
+      if (ex) nc.img = ex.img;
+      else {
+        dup = findDup(nc);
+        if (dup && dup.id !== id) {
+          /* Même voiture ajoutée par deux appareils : on garde celle dont l'identifiant est le plus petit. */
+          if (id < dup.id) {
+            if (!nc.st && dup.st) nc.st = dup.st;
+            if (!nc.img) nc.img = dup.img;
+            cars.splice(cars.indexOf(dup), 1);
+          } else {
+            if (!dup.st && nc.st) dup.st = nc.st;
+            teamRef().collection('cars').doc(id).delete().catch(function () {});
+            changed = true;
+            return;
+          }
+        }
+      }
+      j = JSON.stringify(cleanCar(nc));
+      if (ex) {
+        if (JSON.stringify(cleanCar(ex)) === j) { synced[id] = j; return; }
+        cars[cars.indexOf(ex)] = nc;
+      } else cars.push(nc);
+      synced[id] = j;
+      changed = true;
+    });
+    if (changed) { save(); renderAll(); }
+  }
+  function applyRemoteDays(snap) {
+    var changed = false;
+    snap.docChanges().forEach(function (ch) {
+      if (ch.doc.metadata && ch.doc.metadata.hasPendingWrites) return;
+      if (ch.type === 'removed') { if (hist[ch.doc.id]) { delete hist[ch.doc.id]; changed = true; } return; }
+      var d = ch.doc.data();
+      hist[ch.doc.id] = { cars: Array.isArray(d.cars) ? d.cars : [], t: d.t || 0 };
+      changed = true;
+    });
+    if (changed) { saveHist(); if (tab === 'hist') renderHist(); }
+  }
+
+  function stopSync() { unsubs.forEach(function (u) { try { u(); } catch (e) {} }); unsubs = []; synced = {}; clearTimeout(pushT); }
+  async function startSync(code) {
+    stopSync();
+    team.code = code;
+    try { localStorage.setItem(TKEY, code); } catch (e) {}
+    setTeamState('connecting');
+    try { await loadFb(); } catch (e) { setTeamState('error', 'reseau'); return; }
+    if (team.code !== code) return;
+    var first = true;
+    var onErr = function (e) { setTeamState('error', e && e.code || 'erreur'); };
+    unsubs.push(teamRef().collection('cars').onSnapshot(function (snap) {
+      applyRemoteCars(snap);
+      if (first) { first = false; setTeamState('on'); syncPush(); }
+      else if (team.state !== 'on') setTeamState('on');
+    }, onErr));
+    unsubs.push(teamRef().collection('days').onSnapshot(applyRemoteDays, onErr));
+  }
+  function leaveShare() {
+    stopSync();
+    team.code = '';
+    try { localStorage.removeItem(TKEY); } catch (e) {}
+    setTeamState('off');
+  }
+  function pushDay(k) {
+    if (!db || !team.code || !hist[k]) return;
+    teamRef().collection('days').doc(k).set({ cars: hist[k].cars, t: hist[k].t || Date.now() }).catch(function (e) { setTeamState('error', e && e.code || 'write'); });
+  }
+  function delDay(k) {
+    if (!db || !team.code) return;
+    teamRef().collection('days').doc(k).delete().catch(function () {});
+  }
+
+  function openShare() {
+    shareStep = ''; pendingCode = '';
+    $('#sheet-root').innerHTML = '<div class="scrim" data-action="share-close"></div><div class="sheet" id="share-sheet" role="dialog" aria-modal="true" aria-label="Partage"></div>';
+    renderShare();
+  }
+  function renderShare() {
+    var el = $('#share-sheet');
+    if (!el) return;
+    var h = '<h2 class="h2" style="margin:0">Partage</h2>';
+    if (team.code) {
+      var st = team.state === 'on' ? '<span class="tag">Connecté, synchronisation en direct</span>' : team.state === 'connecting' ? '<span class="tag tag--warn">Connexion en cours…</span>' :
+        '<span class="tag tag--warn">Pas de connexion' + (team.err === 'permission-denied' ? ' : accès refusé (règles Firestore)' : team.err ? ' (' + esc(team.err) + ')' : '') + '</span>';
+      h += '<div class="sum">' + st + '</div>' +
+        '<p class="legend">Donne ce code à ton pote. Il le saisit dans « Partage → J’ai déjà un code » et voit la même liste que toi, en direct.</p>' +
+        '<div class="code" id="share-code">' + esc(fmtCode(team.code)) + '</div>' +
+        '<button type="button" class="btn" data-action="share-copy">Copier le code</button>' +
+        '<p class="legend">Toute personne qui connaît ce code peut voir et modifier la liste. Ne le publie pas.</p>' +
+        (shareStep === 'leave' ? '<div class="duo"><button type="button" class="btn btn--ghost" data-action="share-leave-cancel">Annuler</button><button type="button" class="btn btn--danger-solid" data-action="share-leave-ok">Quitter</button></div>'
+          : '<button type="button" class="btn btn--danger" data-action="share-leave">Quitter le partage</button>');
+    } else if (shareStep === 'join') {
+      h += '<p class="legend">Tu as ' + cars.length + ' ' + plural(cars.length, 'voiture', 'voitures') + ' sur ce téléphone. Que veux-tu en faire ?</p>' +
+        '<button type="button" class="btn" data-action="share-join-keep">Les ajouter au partage</button>' +
+        '<button type="button" class="btn btn--ghost" data-action="share-join-clear">Repartir de la liste partagée</button>' +
+        '<button type="button" class="btn btn--ghost" data-action="share-back">Retour</button>';
+    } else {
+      h += '<p class="legend">Mode invité : tes voitures restent sur ce téléphone. Avec un partage, plusieurs téléphones voient la même liste et le même historique.</p>' +
+        '<button type="button" class="btn btn--primary" data-action="share-create">Créer un partage</button>' +
+        '<div class="field"><label for="f-code">J’ai déjà un code</label><input id="f-code" class="mono" type="text" autocomplete="off" autocapitalize="characters" spellcheck="false" placeholder="XXXX-XXXX-XXXX"></div>' +
+        '<p class="form-error" id="share-err" role="alert"></p>' +
+        '<button type="button" class="btn" data-action="share-join">Rejoindre</button>';
+    }
+    h += '<button type="button" class="btn btn--ghost" data-action="share-close">Fermer</button>';
+    el.innerHTML = h;
+  }
+  function shareInit() {
+    var c = '';
+    try { c = localStorage.getItem(TKEY) || ''; } catch (e) {}
+    if (c) startSync(c);
   }
 
   /* ---------- Événements ---------- */
@@ -1459,6 +1752,28 @@ button { cursor: pointer; -webkit-tap-highlight-color: transparent; }
     else if (a === 'edit') { var cc = t.closest('.car'); if (cc) openSheet(cc.dataset.id); }
     else if (a === 'add') { openSheet(null); }
     else if (a === 'sheet-close') { closeSheet(); }
+    else if (a === 'share') { openShare(); }
+    else if (a === 'share-close') { $('#sheet-root').innerHTML = ''; }
+    else if (a === 'share-create') { startSync(newCode()); }
+    else if (a === 'share-join') {
+      var cd = normCode($('#f-code') && $('#f-code').value);
+      if (cd.length < 12) { var se = $('#share-err'); if (se) se.textContent = 'Le code contient 12 caractères.'; return; }
+      pendingCode = cd;
+      if (cars.length) { shareStep = 'join'; renderShare(); } else startSync(cd);
+    }
+    else if (a === 'share-join-keep') { shareStep = ''; startSync(pendingCode); }
+    else if (a === 'share-join-clear') { shareStep = ''; cars = []; save(); renderAll(); startSync(pendingCode); }
+    else if (a === 'share-back') { shareStep = ''; renderShare(); }
+    else if (a === 'share-leave') { shareStep = 'leave'; renderShare(); }
+    else if (a === 'share-leave-cancel') { shareStep = ''; renderShare(); }
+    else if (a === 'share-leave-ok') { shareStep = ''; leaveShare(); toast('Partage quitté : ta liste reste sur ce téléphone'); }
+    else if (a === 'share-copy') {
+      var txt = fmtCode(team.code);
+      var done = function () { toast('Code copié'); };
+      if (navigator.clipboard && navigator.clipboard.writeText) navigator.clipboard.writeText(txt).then(done, function () { toast('Touche le code pour le sélectionner'); });
+      else toast('Touche le code pour le sélectionner');
+    }
+
     else if (a === 'del') {
       if (!confirmDel) {
         confirmDel = true;
@@ -1478,16 +1793,35 @@ button { cursor: pointer; -webkit-tap-highlight-color: transparent; }
       if (fcar) { fcar.st = ''; save(); renderAll(); toast('Voiture retrouvée'); }
     }
     else if (a === 'copy') { copyReport(); }
-    else if (a === 'clear') { confirmClear = true; renderReport(); }
+    else if (a === 'clear-save') { confirmClear = 'save'; renderReport(); }
+    else if (a === 'clear-wipe') { confirmClear = 'wipe'; renderReport(); }
     else if (a === 'clear-cancel') { confirmClear = false; renderReport(); }
     else if (a === 'clear-ok') {
+      if (confirmClear === 'save') {
+        var dk = dayKey(new Date()), prev = hist[dk] ? hist[dk].cars : [], ids = {};
+        var snap = cars.map(function (c) { var o = Object.assign({}, c); delete o.img; return o; });
+        prev.forEach(function (c) { ids[c.id] = 1; });
+        hist[dk] = { cars: prev.concat(snap.filter(function (c) { return !ids[c.id]; })), t: Date.now() };
+        pushDay(dk);
+        if (!saveHist()) { toast('M\u00e9moire pleine : journ\u00e9e non enregistr\u00e9e'); confirmClear = false; renderReport(); return; }
+        hm = { y: new Date().getFullYear(), m: new Date().getMonth() };
+      }
+      var wasSave = confirmClear === 'save';
       cars = [];
       confirmClear = false;
       filter = 'all';
       save();
       renderAll();
-      toast('Liste effacée');
+      toast(wasSave ? 'Journ\u00e9e enregistr\u00e9e' : 'Liste effac\u00e9e');
     }
+    else if (a === 'h-prev') { hm.m--; if (hm.m < 0) { hm.m = 11; hm.y--; } renderHist(); }
+    else if (a === 'h-next') { hm.m++; if (hm.m > 11) { hm.m = 0; hm.y++; } renderHist(); }
+    else if (a === 'h-open') { hDay = t.dataset.k; hConfirmDel = false; renderHist(); window.scrollTo(0, 0); }
+    else if (a === 'h-back') { hDay = null; hConfirmDel = false; renderHist(); window.scrollTo(0, 0); }
+    else if (a === 'h-del') { hConfirmDel = true; renderHist(); }
+    else if (a === 'h-del-cancel') { hConfirmDel = false; renderHist(); }
+    else if (a === 'h-del-ok') { delDay(hDay); delete hist[hDay]; saveHist(); hDay = null; hConfirmDel = false; renderHist(); toast('Journ\u00e9e supprim\u00e9e'); }
+    else if (a === 'h-copy') { copyReport('#hreport'); }
     else if (a === 'stop') { if (imp && imp.ctl) imp.ctl.abort(); }
     else if (a === 'dismiss-import') { imp = null; renderImport(); }
   });
@@ -1549,6 +1883,7 @@ button { cursor: pointer; -webkit-tap-highlight-color: transparent; }
   /* ---------- Démarrage ---------- */
   renderAll();
   renderImport();
+  shareInit();
 })();
 </script>
 </body>
