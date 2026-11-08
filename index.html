@@ -1163,7 +1163,7 @@ button { cursor: pointer; -webkit-tap-highlight-color: transparent; }
         vin: normVin(r.vin),
         emp: clean(r.emplacement),
         st: '',
-        ok: !!(r.sure && /^[A-Z]{2} \d{3} [A-Z]{2}$/.test(normPlate(r.plaque)) && clean(r.marque) && clean(r.modele) && clean(r.emplacement)),
+        ok: !!(r.sure && /^[A-Z]{2} \d{3} [A-Z]{2}$/.test(normPlate(r.plaque)) && clean(r.marque)),
         img: r.img || '',
         chk: r.chk,
         unc: r.unc
@@ -1176,6 +1176,8 @@ button { cursor: pointer; -webkit-tap-highlight-color: transparent; }
         if (!ex.marque && c.marque) ex.marque = c.marque;
         if (!ex.modele && c.modele) ex.modele = c.modele;
         if (!ex.emp && c.emp) ex.emp = c.emp;
+        /* Deux lectures indépendantes identiques (même VIN, même plaque) : la voiture est validée. */
+        if (c.ok && !ex.ok && ex.vin === c.vin && pk(ex.plaque) === pk(c.plaque)) ex.ok = true;
         if (!ex.img && c.img) ex.img = c.img;
         dup++;
         return;
@@ -1421,7 +1423,7 @@ button { cursor: pointer; -webkit-tap-highlight-color: transparent; }
           }
         }
         car.vin = res.vin; car.unc = res.unc; car.chk = res.chk;
-        car.sure = !res.chk && !res.dis.length && res.vin.length === 17;
+        car.sure = !res.chk && res.vin.length === 17 && res.dis.every(function (k) { return !TWIN[res.vin.charAt(k)]; });
       }
     } finally {
       await setMode(w, 'page');
